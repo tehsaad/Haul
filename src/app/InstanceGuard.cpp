@@ -18,6 +18,11 @@ namespace {
 
 constexpr qint64 kMaxMessage = 64 * 1024;
 
+bool isFtpScheme(const QUrl &url)
+{
+    return url.scheme().startsWith(QLatin1String("ftp"), Qt::CaseInsensitive);
+}
+
 // A folder only this user can write to, shared by every process of this user.
 QString privateDirectory()
 {
@@ -49,6 +54,8 @@ QByteArray encodeIpcCommand(const IpcCommand &command)
         o["url"] = command.url;
         if (!command.fileName.isEmpty())
             o["name"] = command.fileName;
+        if (!command.referrer.isEmpty())
+            o["referrer"] = command.referrer;
         o["confirm"] = command.confirm;
     }
     return QJsonDocument(o).toJson(QJsonDocument::Compact) + '\n';
@@ -79,6 +86,13 @@ bool decodeIpcCommand(const QByteArray &line, IpcCommand *command, QString *erro
     command->type = IpcCommand::Add;
     command->url = check.url.toString(QUrl::FullyEncoded);
     command->fileName = o.value("name").toString();
+    command->referrer.clear();
+    const QString referrer = o.value("referrer").toString();
+    if (!referrer.isEmpty()) {
+        const UrlCheck origin = validateDownloadUrl(referrer);
+        if (origin.ok && !isFtpScheme(origin.url))
+            command->referrer = origin.url.toString(QUrl::FullyEncoded);
+    }
     command->confirm = o.value("confirm").toBool();
     return true;
 }

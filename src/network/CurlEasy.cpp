@@ -195,6 +195,8 @@ void CurlEasy::configure(const QUrl &url, const NetworkOptions &options)
         curl_easy_setopt(m_curl, CURLOPT_PASSWORD, password.constData());
         curl_easy_setopt(m_curl, CURLOPT_HTTPAUTH, CURLAUTH_ANY);
     }
+    if (!options.login.referer.isEmpty())
+        curl_easy_setopt(m_curl, CURLOPT_REFERER, options.login.referer.constData());
     if (!options.login.cookie.isEmpty())
         curl_easy_setopt(m_curl, CURLOPT_COOKIE, options.login.cookie.constData());
 

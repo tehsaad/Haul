@@ -210,9 +210,17 @@ void AddDownloadDialog::setFileName(const QString &name)
     updateConflictHint();
 }
 
+void AddDownloadDialog::setReferrer(const QString &referrer)
+{
+    m_referrer = referrer;
+    if (!m_referrer.isEmpty() && validateDownloadUrl(m_url->text()).ok)
+        m_debounce.start(); // check again the way the site expects to be asked
+}
+
 DownloadLogin AddDownloadDialog::login() const
 {
     DownloadLogin value;
+    value.referer = m_referrer.toUtf8();
     value.username = m_username->text();
     value.password = m_password->text();
     value.cookie = m_cookie->text().trimmed().toUtf8();
@@ -223,10 +231,11 @@ void AddDownloadDialog::onUrlEdited()
 {
     const QString scheme = QUrl(m_url->text().trimmed()).scheme().toLower();
     const bool plainText = scheme == QLatin1String("http") || scheme == QLatin1String("ftp");
-    m_loginNote->setText(plainText && !login().isEmpty()
+    const bool hasLogin = !m_username->text().isEmpty() || !m_password->text().isEmpty() || !m_cookie->text().isEmpty();
+    m_loginNote->setText(plainText && hasLogin
                              ? QStringLiteral("This link isn't encrypted, so anyone on the network could read this login. Not saved.")
                              : QStringLiteral("Not saved. Haul forgets this when it closes."));
-    setRole(m_loginNote, plainText && !login().isEmpty() ? QStringLiteral("warning") : QStringLiteral("muted"));
+    setRole(m_loginNote, plainText && hasLogin ? QStringLiteral("warning") : QStringLiteral("muted"));
 
     cancelInspection();
     m_probeFailedPermanently = false;

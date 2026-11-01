@@ -17,6 +17,7 @@
 #include "ui/Widgets.h"
 
 #include <QApplication>
+#include <QCheckBox>
 #include <QElapsedTimer>
 #include <QLabel>
 #include <QLineEdit>
@@ -214,6 +215,49 @@ private slots:
         QVERIFY(table->parentWidget()->height() >= 150); // the list keeps its room at the smallest size
         window->resize(1120, 680);
     }
+
+#if defined(Q_OS_LINUX)
+    // Regression test: saving used to untick the box before it was read, so nothing was registered.
+    void browserCheckboxStaysOnAfterSave()
+    {
+        QTemporaryDir home;
+        const QByteArray oldHome = qgetenv("HOME");
+        const QByteArray oldConfig = qgetenv("XDG_CONFIG_HOME");
+        qputenv("HOME", home.path().toUtf8());
+        qputenv("XDG_CONFIG_HOME", home.filePath("config").toUtf8());
+        QFile helper(QCoreApplication::applicationDirPath() + "/haul-native-host");
+        QVERIFY(helper.open(QIODevice::WriteOnly));
+        helper.close();
+
+        QWidget *page = window->pageWidget(ui::MainWindow::Settings);
+        QCheckBox *box = nullptr;
+        for (QCheckBox *candidate : page->findChildren<QCheckBox *>()) {
+            if (candidate->text().contains("browser extension"))
+                box = candidate;
+        }
+        QPushButton *save = nullptr;
+        for (QPushButton *candidate : page->findChildren<QPushButton *>()) {
+            if (candidate->text() == "Save")
+                save = candidate;
+        }
+        QVERIFY(box && save);
+        const QString manifest = home.filePath("config/google-chrome/NativeMessagingHosts/io.github.tehsaad.haul.json");
+
+        box->setChecked(true);
+        save->click();
+        QVERIFY(box->isChecked());
+        QVERIFY(QFile::exists(manifest));
+
+        box->setChecked(false);
+        save->click();
+        QVERIFY(!box->isChecked());
+        QVERIFY(!QFile::exists(manifest));
+
+        helper.remove();
+        qputenv("HOME", oldHome);
+        qputenv("XDG_CONFIG_HOME", oldConfig);
+    }
+#endif
 
     void lightThemeApplies()
     {

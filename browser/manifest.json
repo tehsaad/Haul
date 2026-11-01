@@ -1,12 +1,50 @@
 {
   "manifest_version": 3,
   "name": "Haul",
-  "version": "0.2.0",
-  "description": "Send links and downloads to the Haul download manager.",
+  "version": "0.2.1",
+  "description": "Sends downloads, videos and audio files to the Haul download manager.",
   "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAuOSSgDrQ4cyjPFedwpszA7AHYexcNjWkRhbKGTsUcc+lBYDfqa8iG1HZvRAEaX3LKwfE3yFcknSSykVIRxI/AIacPBXsLUixSi4x2JEqfLft9JkosKak470c6lQJLAsgZAPcp3DephkwwXV4/Aa3bzB8llZo/lcfl84B0ePnUOx/ZVWDw9/ZBtK2O0fM+jFAijoVgHrhY2BNP3WOQx2kHS8bXwP8JbiHtWnip+EAH8jghdC66xXzgxrT4PGyq6OtXkUfuDNoPr+4jnym7gwKLRJfyBNQh3xkY/2rdeSzKUlLFttx952EfNa9LX18riv4esBeqWFbgti+jepsfiOv2QIDAQAB",
-  "permissions": ["contextMenus", "downloads", "nativeMessaging", "storage"],
-  "background": { "service_worker": "background.js", "scripts": ["background.js"] },
-  "action": { "default_popup": "popup.html", "default_title": "Haul", "default_icon": "icon.png" },
-  "icons": { "128": "icon.png" },
-  "browser_specific_settings": { "gecko": { "id": "haul@tehsaad.github.io", "strict_min_version": "128.0" } }
+  "permissions": [
+    "contextMenus",
+    "downloads",
+    "nativeMessaging",
+    "storage",
+    "webRequest"
+  ],
+  "background": {
+    "service_worker": "background.js",
+    "scripts": [
+      "background.js"
+    ]
+  },
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "Haul",
+    "default_icon": "icon.png"
+  },
+  "icons": {
+    "128": "icon.png"
+  },
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "haul@tehsaad.github.io",
+      "strict_min_version": "128.0"
+    }
+  },
+  "host_permissions": [
+    "http://*/*",
+    "https://*/*"
+  ],
+  "content_scripts": [
+    {
+      "matches": [
+        "http://*/*",
+        "https://*/*"
+      ],
+      "js": [
+        "content.js"
+      ],
+      "run_at": "document_idle"
+    }
+  ]
 }

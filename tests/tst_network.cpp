@@ -363,6 +363,17 @@ private slots:
         QCOMPARE(readFile(dir.filePath("a")), expectedContent(5000));
     }
 
+    void refererIsSent()
+    {
+        QTemporaryDir dir;
+        std::atomic_bool cancel { false };
+        SingleRequest req = singleRequest(server.url("/referer/5000"), dir.filePath("a"));
+        QCOMPARE(downloadSingle(req, cancel, nullptr).error.httpStatus, 403);
+        req.options.login.referer = "https://example.org/";
+        QVERIFY(probeUrl(req.url, req.options).ok);
+        QVERIFY(!downloadSingle(req, cancel, nullptr).error.isError());
+    }
+
     // ------------------------------------------------------------ FTP
 
     void ftpProbeAndDownload()

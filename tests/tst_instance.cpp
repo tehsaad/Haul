@@ -135,6 +135,10 @@ private slots:
         QVERIFY(platform::parseBrowserMessage("{\"type\":\"add\",\"url\":\"https://example.com/a.zip\",\"filename\":\"a.zip\"}", &command, &error));
         QVERIFY(command.confirm);
         QCOMPARE(command.fileName, QString("a.zip"));
+        QVERIFY(platform::parseBrowserMessage("{\"type\":\"add\",\"url\":\"https://example.com/a\",\"referrer\":\"https://example.org/\"}", &command, &error));
+        QCOMPARE(command.referrer, QString("https://example.org/"));
+        QVERIFY(platform::parseBrowserMessage("{\"type\":\"add\",\"url\":\"https://example.com/a\",\"referrer\":\"file:///etc/passwd\"}", &command, &error));
+        QVERIFY(command.referrer.isEmpty());
         QVERIFY(!platform::parseBrowserMessage("{\"type\":\"add\",\"url\":\"file:///etc/passwd\"}", &command, &error));
         QVERIFY(!platform::parseBrowserMessage("{\"type\":\"show\"}", &command, &error));
         QVERIFY(!platform::parseBrowserMessage("garbage", &command, &error));

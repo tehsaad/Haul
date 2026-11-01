@@ -36,7 +36,8 @@ The extension talks to Haul through the browser's native messaging, not a networ
 * Registration is opt-in (Settings → Browser), per user, and removed when the option is turned off.
 * The host accepts one message of at most 64 KiB and forwards only a link that passes the same URL validation as the Add dialog.
 * A link from the browser always opens the Add dialog. The browser can suggest a download but cannot start one.
-* The extension asks for no host permissions and never reads cookies, passwords or page contents.
+* The extension asks to run on all http and https sites, which Chrome words as "read and change all your data". It needs this to notice media files and show its panel. It only looks at response headers and `<video>`/`<audio>` addresses, and never reads cookies, passwords or page text. Nothing is sent anywhere except to Haul on this computer.
+* Only the origin of the page a link came from is passed along (`https://site/`), not the full address. It is kept in memory like a login.
 
 ## Single-instance channel
 

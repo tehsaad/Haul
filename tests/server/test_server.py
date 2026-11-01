@@ -90,13 +90,22 @@ class Handler(BaseHTTPRequestHandler):
                 _mutable_version += 1
             return self.send_simple(200, b"ok")
 
+        if path == "/page":
+            html = (b'<!doctype html><title>t</title><video src="/media/clip.mp4"></video>'
+                    b'<a id="dl" href="/file/5000?name=thing.zip" download>get</a>')
+            return self.send_simple(200, html, {"Content-Type": "text/html"})
+
+        if path.startswith("/media/"):
+            body = content(0, 0, 3000000)
+            return self.send_simple(200, body, {"Content-Type": "video/mp4"})
+
         if path == "/redirect-file":
             return self.send_simple(302, b"", {"Location": "file:///etc/passwd"})
 
         if path == "/redirect":
             return self.send_simple(302, b"", {"Location": q.get("to", "/file/10")})
 
-        m = re.match(r"^/(file|mutable|flaky|auth|cookie)/(\d+)$", path)
+        m = re.match(r"^/(file|mutable|flaky|auth|cookie|referer)/(\d+)$", path)
         if not m:
             return self.send_simple(404, b"not found")
 
@@ -111,6 +120,8 @@ class Handler(BaseHTTPRequestHandler):
             return self.send_simple(401, b"login", {"WWW-Authenticate": 'Basic realm="haul"'})
         if kind == "cookie" and "session=abc" not in self.headers.get("Cookie", ""):
             return self.send_simple(403, b"no cookie")
+        if kind == "referer" and "example.org" not in self.headers.get("Referer", ""):
+            return self.send_simple(403, b"no referer")
         if kind == "flaky":
             key = q.get("key", "default")
             with _state_lock:
