@@ -33,6 +33,8 @@ struct StreamVariant {
     int width = 0;
     int height = 0;
     qint64 bandwidth = 0; // bits per second, as the manifest advertises
+    qint64 videoBandwidth = 0; // only when the manifest lists them separately (DASH)
+    qint64 audioBandwidth = 0;
     QString codecs;
     QString url;         // HLS: this variant's media playlist
     QString audioGroup;  // HLS: EXT-X-MEDIA group holding its separate audio

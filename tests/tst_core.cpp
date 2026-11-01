@@ -177,6 +177,10 @@ private slots:
         QCOMPARE(categoryForFileName("setup.exe"), QString("Program"));
         QCOMPARE(categoryForFileName("x.tar.gz"), QString("Archive"));
         QCOMPARE(categoryForFileName("noext"), QString("Other"));
+        for (const char *video : { "a.mp4", "a.mkv", "a.webm", "a.mov", "a.avi", "a.flv", "a.ts", "a.m4v", "a.mpeg", "a.mpg", "a.3gp" })
+            QCOMPARE(categoryForFileName(video), QString("Video"));
+        for (const char *audio : { "a.mp3", "a.wav", "a.flac", "a.aac", "a.m4a", "a.ogg", "a.opus", "a.wma" })
+            QCOMPARE(categoryForFileName(audio), QString("Audio"));
     }
 
     void retryPolicy()

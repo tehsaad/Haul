@@ -4,10 +4,12 @@
 <style>
   body { font: 13px/1.4 system-ui, sans-serif; width: 260px; margin: 12px; color: #2a2824; background: #fbf9f5; }
   label { display: flex; gap: 8px; align-items: flex-start; margin-bottom: 8px; }
+  button { font: inherit; margin-bottom: 8px; padding: 3px 9px; }
   p { margin: 0; color: #6f685d; font-size: 12px; }
   @media (prefers-color-scheme: dark) { body { color: #e6e2da; background: #242321; } p { color: #9b958b; } }
 </style>
+<button id="show">Show media on this page</button>
 <label><input type="checkbox" id="capture"><span>Send browser downloads to Haul</span></label>
-<label><input type="checkbox" id="panel"><span>Show a panel when a page has a video</span></label>
+<label><input type="checkbox" id="panel"><span>Show the indicator when a page has media</span></label>
 <p>Haul asks before it starts anything. If a site needs you to be logged in, turn the first option off for that download. Encrypted video and YouTube aren't offered.</p>
 <script src="popup.js"></script>

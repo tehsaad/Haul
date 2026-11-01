@@ -64,9 +64,14 @@ These were recorded on **2026-10-24** on Ubuntu 26.04 (x86_64, g++ 15.2, Qt 6.10
 
 On 2026-11-01 the parser was also pointed at public test streams published for this purpose (Apple bipbop, Mux test stream, two Akamai DASH samples), and listed qualities and sizes for all four. One full download from the Mux HLS stream, at its lowest quality, produced a valid 22 MB MPEG-TS file in about 60 s without FFmpeg. Downloads from real DASH streams and real FFmpeg merging of downloaded public streams have not been run; merging is tested in CI against generated media.
 
+## Media detection
+
+* `tests/browser/detector.test.mjs` (run by `ctest` as `detector_js`, with `node --test`) covers every format by MIME type and by extension, Content-Disposition, generic types, non-media responses at media addresses, redirects and error statuses, ranged and chunked responses, sizes over 4 GiB, background requests versus stream pieces, manifests, YouTube hosts, and duplicate keys across signed links.
+* `tst_media` fetches a fixture with real signature bytes for every format over HTTP and identifies each one, including extensionless files, fake media, 403 and 410, a 6 GB file (first bytes only), redirects, and a server without ranges.
+
 ## Browser extension in real Chrome
 
-`tests/browser/e2e.mjs` loads the unpacked extension into Chrome with a temporary profile, using the real `haul-native-host` and a stand-in for Haul's socket. It needs Node and Chrome. Run on 2026-11-01 with Chrome 156: extension id matches the host, panel appears by itself on a page with a video, its button reaches Haul with `confirm: true`, a browser download is taken over, and only the site's origin is sent. All 12 checks passed, including a stream fetched with `fetch()` the way hls.js does, quality selection, child playlists not listed twice, and an encrypted stream being named with nothing to press.
+`tests/browser/e2e.mjs` loads the unpacked extension into Chrome with a temporary profile, using the real `haul-native-host` and a stand-in for Haul's socket: `node tests/browser/e2e.mjs build/linux-debug/src/haul-native-host`. It covers the indicator and panel, several files on a page, background and redirected player requests, signed duplicates, stream pieces, fake media removed by the byte check, a 6 GB file, stream qualities, and encrypted streams. CI runs it on Linux and Windows.
 
 ## Segmented download benchmark
 

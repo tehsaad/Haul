@@ -2,6 +2,20 @@
 
 All notable changes to Haul are documented here (format: [Keep a Changelog](https://keepachangelog.com/)).
 
+## [0.4.0] — unreleased
+
+### Added
+- Media detection from real responses: status, Content-Type, Content-Disposition, request type and size. Works on extensionless and signed links, redirects, generic MIME types, ranged and chunked responses, and files players fetch in the background.
+- All of MP4, MKV, WebM, MOV, AVI, FLV, TS, M4V, MPEG, MPG, 3GP, MP3, WAV, FLAC, AAC, M4A, OGG, Opus and WMA.
+- `MediaSniffer` identifies files from their first bytes. The native host's `verify` message confirms format, size and resume support when the panel is opened; fakes are removed.
+- A small indicator and toolbar count, with several files per page. The panel shows format, size, duration, resolution, bitrates, MIME type and source, with estimates marked.
+- Duplicates are removed across signed links, redirects and identical name and size.
+- The detection list survives the browser stopping the extension's background worker.
+
+### Changed
+- The panel no longer opens by itself.
+- `probeUrl` reads the first 4 KiB instead of 1 byte.
+
 ## [0.3.0] — unreleased
 
 ### Added

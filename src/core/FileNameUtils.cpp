@@ -168,9 +168,9 @@ QString categoryForFileName(const QString &name)
         return false;
     };
 
-    if (endsWithAny({ ".mp4", ".mkv", ".avi", ".mov", ".webm", ".m4v", ".flv", ".wmv" }))
+    if (endsWithAny({ ".mp4", ".mkv", ".avi", ".mov", ".webm", ".m4v", ".flv", ".wmv", ".ts", ".mpeg", ".mpg", ".3gp", ".ogv" }))
         return QStringLiteral("Video");
-    if (endsWithAny({ ".mp3", ".flac", ".wav", ".ogg", ".m4a", ".aac", ".opus" }))
+    if (endsWithAny({ ".mp3", ".flac", ".wav", ".ogg", ".oga", ".m4a", ".aac", ".opus", ".wma" }))
         return QStringLiteral("Audio");
     if (endsWithAny({ ".zip", ".rar", ".7z", ".tar", ".gz", ".bz2", ".xz", ".zst", ".iso" }))
         return QStringLiteral("Archive");

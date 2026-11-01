@@ -27,5 +27,11 @@ if(TARGET haul_ui)
     target_link_libraries(tst_ui PRIVATE haul_ui)
 endif()
 
+# The extension's media detector is plain JavaScript, tested without a browser.
+find_program(HAUL_NODE node)
+if(HAUL_NODE)
+    add_test(NAME detector_js COMMAND ${HAUL_NODE} --test ${CMAKE_CURRENT_SOURCE_DIR}/browser/detector.test.mjs)
+endif()
+
 add_dependencies(tst_instance haul-native-host)
 target_compile_definitions(tst_instance PRIVATE HAUL_NATIVE_HOST="$<TARGET_FILE:haul-native-host>")

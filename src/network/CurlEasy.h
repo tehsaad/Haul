@@ -31,7 +31,7 @@ inline bool isFtpUrl(const QUrl &url)
 struct NetworkOptions {
     int connectTimeoutSeconds = 20;
     int stallTimeoutSeconds = 60; // abort if fewer than 1 byte/s arrives for this long
-    QByteArray userAgent = "Haul/0.3 (+https://github.com/tehsaad/Haul)";
+    QByteArray userAgent = "Haul/0.4 (+https://github.com/tehsaad/Haul)";
     DownloadLogin login;
 };
 

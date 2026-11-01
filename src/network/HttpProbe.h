@@ -18,9 +18,10 @@ struct ProbeResult {
     QString suggestedName;      // already sanitized
     QString contentType;
     QString effectiveUrl;       // after redirects
+    QByteArray head;            // the first bytes of the response, for identifying the content
 };
 
-// Sends "GET <url>" with "Range: bytes=0-0". A server that supports ranges answers 206 with
+// Sends "GET <url>" with "Range: bytes=0-4095". A server that supports ranges answers 206 with
 // a Content-Range that reveals the full size; a server that ignores ranges answers 200 and we
 // stop reading after a few kilobytes. This is more reliable than HEAD, which many servers mishandle.
 ProbeResult probeUrl(const QUrl &url, const NetworkOptions &options,
