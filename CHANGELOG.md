@@ -2,7 +2,15 @@
 
 All notable changes to Haul are documented here (format: [Keep a Changelog](https://keepachangelog.com/)).
 
-## [0.4.1] — unreleased
+## [Unreleased]
+
+### Fixed
+- Unticking "Show Haul on pages" now also stops the extension fetching stream manifests.
+
+### Added
+- A privacy policy, shown during installation on Windows, and a code signing policy.
+
+## [0.4.1] — 2026-11-01
 
 ### Changed
 - The list opens by itself when a page loads media, and closes after 12 seconds if ignored. A **Download with Haul** button sits on the video.

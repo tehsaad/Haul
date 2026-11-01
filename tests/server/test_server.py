@@ -65,6 +65,7 @@ _blocks = {}
 _state_lock = threading.Lock()
 _mutable_version = 1
 _flaky_counts = {}
+_hit_counts = {}
 STATIC_DIR = os.environ.get("HAUL_STATIC_DIR", "")
 
 
@@ -260,6 +261,11 @@ class Handler(BaseHTTPRequestHandler):
         url = urlparse(self.path)
         q = {k: v[-1] for k, v in parse_qs(url.query).items()}
         path = url.path
+        with _state_lock:
+            _hit_counts[path] = _hit_counts.get(path, 0) + 1
+
+        if path == "/hits":
+            return self.send_simple(200, str(_hit_counts.get(q.get("path", ""), 0)).encode())
 
         if path == "/bump":
             with _state_lock:
