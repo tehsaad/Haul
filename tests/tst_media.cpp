@@ -7,15 +7,20 @@
 #include "media/DashParser.h"
 #include "media/HlsParser.h"
 #include "media/MediaMerger.h"
+#include "media/MediaSniffer.h"
 #include "media/StreamDownloader.h"
 #include "media/StreamResolver.h"
 #include "network/DownloadWorker.h"
+#include "network/HttpProbe.h"
+#include "platform/BrowserIntegration.h"
 #include "storage/Database.h"
 #include "storage/DownloadRepository.h"
 #include "storage/SettingsRepository.h"
 
 #include <QDir>
 #include <QFile>
+#include <QFileInfo>
+#include <QJsonObject>
 #include <QElapsedTimer>
 #include <QSignalSpy>
 #include <QStandardPaths>
@@ -93,6 +98,129 @@ private slots:
     }
 
     void cleanupTestCase() { curl_global_cleanup(); }
+
+    // ---------------------------------------------------------------- identifying real bytes
+
+    void sniffRecognisesEveryFormat_data()
+    {
+        QTest::addColumn<QString>("name");
+        QTest::addColumn<QString>("expected");
+        QTest::addColumn<int>("kind");
+        const int video = SniffResult::Video;
+        const int audio = SniffResult::Audio;
+        QTest::newRow("mp4") << "mp4" << "mp4" << video;
+        QTest::newRow("m4v") << "m4v" << "m4v" << video;
+        QTest::newRow("mov") << "mov" << "mov" << video;
+        QTest::newRow("3gp") << "3gp" << "3gp" << video;
+        QTest::newRow("mkv") << "mkv" << "mkv" << video;
+        QTest::newRow("webm") << "webm" << "webm" << video;
+        QTest::newRow("avi") << "avi" << "avi" << video;
+        QTest::newRow("flv") << "flv" << "flv" << video;
+        QTest::newRow("ts") << "ts" << "ts" << video;
+        QTest::newRow("mpeg") << "mpeg" << "mpeg" << video;
+        QTest::newRow("mpg") << "mpg" << "mpeg" << video;
+        QTest::newRow("mp3") << "mp3" << "mp3" << audio;
+        QTest::newRow("wav") << "wav" << "wav" << audio;
+        QTest::newRow("flac") << "flac" << "flac" << audio;
+        QTest::newRow("aac") << "aac" << "aac" << audio;
+        QTest::newRow("m4a") << "m4a" << "m4a" << audio;
+        QTest::newRow("ogg") << "ogg" << "ogg" << audio;
+        QTest::newRow("opus") << "opus" << "opus" << audio;
+        QTest::newRow("wma") << "wma" << "wma" << audio;
+    }
+
+    // Fetched over HTTP from the fixtures, so this also covers range requests of the first bytes.
+    void sniffRecognisesEveryFormat()
+    {
+        QFETCH(QString, name);
+        QFETCH(QString, expected);
+        QFETCH(int, kind);
+        const ProbeResult probe = probeUrl(QUrl(server.url("/m/sample." + name)), NetworkOptions());
+        QVERIFY2(probe.ok, qPrintable(probe.error.message));
+        QVERIFY(probe.rangeSupported);
+        QCOMPARE(probe.totalSize, qint64(2000000));
+        const SniffResult sniff = sniffMedia(probe.head);
+        QCOMPARE(sniff.format, expected);
+        QCOMPARE(static_cast<int>(sniff.kind), kind);
+    }
+
+    void sniffIdentifiesWithoutHelpFromNameOrType()
+    {
+        const ProbeResult probe = probeUrl(QUrl(server.url("/m/stream?fmt=webm&ct=application/octet-stream")), NetworkOptions());
+        QVERIFY(probe.ok);
+        QCOMPARE(sniffMedia(probe.head).format, QString("webm"));
+    }
+
+    void sniffRejectsThingsThatAreNotMedia()
+    {
+        QCOMPARE(sniffMedia("<!DOCTYPE html><html>").kind, SniffResult::NotMedia);
+        QCOMPARE(sniffMedia("  \n<html>").kind, SniffResult::NotMedia);
+        QCOMPARE(sniffMedia("{\"error\":\"expired\"}").kind, SniffResult::NotMedia);
+        QCOMPARE(sniffMedia("#EXTM3U\n").kind, SniffResult::Manifest);
+        QCOMPARE(sniffMedia("random bytes").kind, SniffResult::Unknown);
+        QCOMPARE(sniffMedia(QByteArray()).kind, SniffResult::Unknown);
+    }
+
+    void fileDescriptionTellsTheBrowserWhatIsReal()
+    {
+        QJsonObject o = platform::describeFile(probeUrl(QUrl(server.url("/m/real.flac?size=400000")), NetworkOptions()));
+        QVERIFY(o["ok"].toBool());
+        QCOMPARE(o["format"].toString(), QString("flac"));
+        QCOMPARE(o["kind"].toString(), QString("audio"));
+        QVERIFY(!o["notMedia"].toBool());
+        QVERIFY(o["resumable"].toBool());
+        QCOMPARE(o["size"].toDouble(), 400000.0);
+
+        // The name and headers claim a video; the bytes are a login page.
+        o = platform::describeFile(probeUrl(QUrl(server.url("/m/fake.mp4?ct=application/octet-stream&body=html")), NetworkOptions()));
+        QVERIFY(o["ok"].toBool());
+        QVERIFY(o["notMedia"].toBool());
+
+        o = platform::describeFile(probeUrl(QUrl(server.url("/file/10?status=403")), NetworkOptions()));
+        QVERIFY(!o["ok"].toBool());
+        QVERIFY(o["restricted"].toBool());
+        o = platform::describeFile(probeUrl(QUrl(server.url("/file/10?status=410")), NetworkOptions()));
+        QVERIFY(o["gone"].toBool());
+
+        // Larger than 4 GiB: the size must survive, and only the first bytes are fetched.
+        o = platform::describeFile(probeUrl(QUrl(server.url("/m/huge.mkv?size=6000000000")), NetworkOptions()));
+        QCOMPARE(o["size"].toDouble(), 6000000000.0);
+        QCOMPARE(o["format"].toString(), QString("mkv"));
+
+        // Redirects and servers without ranges.
+        o = platform::describeFile(probeUrl(QUrl(server.url("/redirect?to=/m/moved.mp3")), NetworkOptions()));
+        QCOMPARE(o["format"].toString(), QString("mp3"));
+        QVERIFY(o["effectiveUrl"].toString().endsWith("/m/moved.mp3"));
+        o = platform::describeFile(probeUrl(QUrl(server.url("/m/noranges.ogg?ranges=0")), NetworkOptions()));
+        QVERIFY(!o["resumable"].toBool());
+        QCOMPARE(o["format"].toString(), QString("ogg"));
+    }
+
+    // Detected media goes through the normal manager: segmented, resumable, and to the byte.
+    void detectedFilesDownloadThroughTheManager()
+    {
+        QTemporaryDir dir;
+        Database db;
+        QVERIFY(db.open(dir.filePath("t.db")));
+        QVERIFY(db.migrate());
+        DownloadRepository repo(db);
+        SettingsRepository settings(dir.filePath("t.ini"));
+        AppSettings s = settings.current();
+        s.downloadDirectory = dir.path();
+        settings.save(s);
+        DownloadManager manager(&repo, &settings);
+        AddRequest request;
+        request.url = server.url("/m/stream?fmt=mp4&size=3000000");
+        request.directory = dir.path();
+        request.fileName = "stream.mp4";
+        QString error;
+        const qint64 id = manager.addDownload(request, &error);
+        QVERIFY2(id > 0, qPrintable(error));
+        QTRY_VERIFY_WITH_TIMEOUT(manager.task(id)->state == TaskState::Completed, 20000);
+        QCOMPARE(QFileInfo(dir.filePath("stream.mp4")).size(), qint64(3000000));
+        QCOMPARE(manager.task(id)->streamKind, StreamKind::File);
+        QVERIFY(readFile(dir.filePath("stream.mp4")).mid(4, 4) == "ftyp");
+    }
 
     // ---------------------------------------------------------------- HLS parser
 

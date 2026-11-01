@@ -16,6 +16,7 @@ add_library(haul_engine STATIC
     network/HttpDownloader.cpp
     network/SegmentDownloader.cpp
     network/DownloadWorker.cpp
+    media/MediaSniffer.cpp
     media/StreamTypes.cpp
     media/HlsParser.cpp
     media/DashParser.cpp

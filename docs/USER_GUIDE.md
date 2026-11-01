@@ -112,9 +112,18 @@ See "Browser extension" in the README. Opening Haul while it is already running 
 
 ## Video streams
 
-When a page plays a video, Haul's panel appears in the corner. Pick a quality and press **Download**, then confirm in the Add dialog. You can also paste an `.m3u8` or `.mpd` address into the Add dialog yourself.
+When a page has audio or video, a small **Haul: 3** indicator appears in the corner. Click it to open the list, pick a quality if there is a choice, press **Download**, then confirm in the Add dialog. If you close the list, the extension's popup can bring it back. You can also paste an `.m3u8` or `.mpd` address into the Add dialog yourself.
 
 Sizes and time left start as estimates, shown with "About" or "≈", because a stream's exact size is only known at the end. The Details page shows the format, quality and how many pieces have arrived.
 
 If you see "Protected video", the stream is encrypted and Haul won't download it. "This is a live stream" means it has no fixed length. If a download stops saying the link expired, reopen the page and add it again, because many sites issue links that only last a short time.
 
+## What the list tells you
+
+Each row shows what is known: format, resolution, length, size, bitrate, MIME type and the site it comes from. "≈" marks an estimate. Opening the list also checks each file:
+
+* **Checked: a real MP4 file. Can resume.** Haul read its first bytes.
+* **This server didn't let Haul in.** It may need a login or only accept browsers. Press **In browser** to download it with your browser, or use **Download** and enter a login in Haul.
+* **This link no longer works.** Reload the page, since many links expire.
+
+A file that claims to be media but turns out to be a web page is removed from the list.

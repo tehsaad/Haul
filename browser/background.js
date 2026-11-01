@@ -1,20 +1,45 @@
-// Haul browser extension (background). It hands downloads to the Haul desktop app and notices
-// video files and streams that pages load. It never reads cookies or passwords.
+// Haul browser extension (background). It watches response headers for media, keeps a list per
+// tab, and passes downloads to the Haul desktop app. It never reads cookies or passwords.
 const api = globalThis.browser ?? globalThis.chrome;
+if (typeof importScripts === "function" && !globalThis.HaulDetector) importScripts("detector.js");
+const { classifyResponse, mediaKey, EXCLUDED_HOSTS } = globalThis.HaulDetector;
+
 const HOST = "io.github.tehsaad.haul";
 const MENU_ID = "haul-download";
-const MIN_MEDIA_SIZE = 1024 * 1024; // smaller responses are icons, previews and stream pieces
-
-// YouTube streams are protected and its terms forbid downloading, so Haul stays out of them.
-const EXCLUDED_HOSTS = /(^|\.)(youtube\.com|youtube-nocookie\.com|youtu\.be|googlevideo\.com|ytimg\.com)$/i;
-const MEDIA_NAME = /\.(mp4|m4v|webm|mkv|mov|avi|flv|wmv|mp3|m4a|flac|wav|ogg|opus|aac)$/i;
-const STREAM_PIECE = /\.(ts|m4s)$/i;
-const MANIFEST_NAME = /\.(m3u8|m3u|mpd)$/i;
-const MANIFEST_TYPE = /mpegurl|dash\+xml/i;
 
 const passThrough = new Set(); // downloads restarted in the browser because Haul was unavailable
-const mediaByTab = new Map();
-const streamChildren = new Map(); // tab -> playlists that belong to a master already listed
+
+// tab id -> { media: Map(key -> entry), children: Set(key) }. The browser may stop this worker when
+// idle, so the lists are also kept in session storage.
+const tabs = new Map();
+const storage = api.storage.session;
+const restored = storage
+  ? storage.get("tabs").then(({ tabs: saved }) => {
+      for (const [id, state] of Object.entries(saved || {}))
+        tabs.set(Number(id), { media: new Map(state.media), children: new Set(state.children) });
+    }).catch(() => {})
+  : Promise.resolve();
+
+let saveTimer = null;
+function saveSoon() {
+  if (!storage || saveTimer) return;
+  saveTimer = setTimeout(() => {
+    saveTimer = null;
+    const saved = {};
+    for (const [id, state] of tabs)
+      saved[id] = { media: [...state.media], children: [...state.children] };
+    storage.set({ tabs: saved }).catch(() => {});
+  }, 500);
+}
+
+function tabState(tabId) {
+  if (!tabs.has(tabId)) tabs.set(tabId, { media: new Map(), children: new Set() });
+  return tabs.get(tabId);
+}
+
+function forgetTab(tabId) {
+  if (tabs.delete(tabId)) saveSoon();
+}
 
 function originOf(page) {
   try {
@@ -42,12 +67,7 @@ function sendToHaul(url, filename, referrer, stream, variant) {
   return askHost({
     type: "add", url, filename: filename || "", referrer: originOf(referrer),
     stream: stream || "", variant: variant || "",
-  }).then((answer) => {
-    const ok = !!(answer && answer.ok);
-    api.action.setBadgeText({ text: ok ? "" : "!" });
-    api.action.setTitle({ title: ok ? "Haul" : "Haul could not be reached. Allow the extension in Haul's settings." });
-    return answer || { ok: false, error: "No answer from Haul." };
-  });
+  }).then((answer) => answer || { ok: false, error: "No answer from Haul." });
 }
 
 api.runtime.onInstalled.addListener(() => {
@@ -69,10 +89,22 @@ api.downloads.onCreated.addListener(async (item) => {
   const { capture } = await api.storage.local.get("capture");
   if (capture === false || !/^(https?|ftp):/i.test(item.url)) return;
 
+  // Hold the download while Haul asks the server. If the server won't serve Haul (a login, say, or
+  // a site that only accepts browsers), the browser simply carries on and nothing is lost.
+  try {
+    await api.downloads.pause(item.id);
+  } catch {
+    return; // it already finished in the browser, so there is nothing left to take over
+  }
+  const check = await askHost({ type: "verify", url: item.url, referrer: originOf(item.referrer) });
+  if (!check || !check.ok) {
+    api.downloads.resume(item.id).catch(() => {});
+    return;
+  }
   try {
     await api.downloads.cancel(item.id);
   } catch {
-    return; // it already finished in the browser, so there is nothing left to take over
+    return;
   }
   api.downloads.erase({ id: item.id });
   const name = (item.filename || "").split(/[\\/]/).pop();
@@ -83,119 +115,115 @@ api.downloads.onCreated.addListener(async (item) => {
   }
 });
 
-function header(details, name) {
-  const found = details.responseHeaders.find((h) => h.name.toLowerCase() === name);
-  return found ? found.value : "";
-}
-
-function isExcluded(details) {
-  const url = new URL(details.url);
-  if (EXCLUDED_HOSTS.test(url.hostname) || details.statusCode >= 300) return true;
-  const page = details.documentUrl || details.initiator;
-  try {
-    return !!page && EXCLUDED_HOSTS.test(new URL(page).hostname);
-  } catch {
-    return false;
-  }
-}
-
-function isManifest(details) {
-  return MANIFEST_NAME.test(new URL(details.url).pathname) || MANIFEST_TYPE.test(header(details, "content-type"));
-}
-
-function tabState(tabId) {
-  if (!mediaByTab.has(tabId)) mediaByTab.set(tabId, new Map());
-  if (!streamChildren.has(tabId)) streamChildren.set(tabId, new Set());
-  return mediaByTab.get(tabId);
-}
-
 function tell(tabId, message) {
   api.tabs.sendMessage(tabId, message, { frameId: 0 }).catch(() => {});
 }
 
 // One parser for everything: the native host reads the manifest and lists its qualities. A master
 // playlist also names its child playlists, which are the same video and must not be listed twice.
-async function offerStream(details) {
-  const tabId = details.tabId;
-  const media = tabState(tabId);
-  const url = details.url;
-  if (media.has(url) || streamChildren.get(tabId).has(url)) return;
-  const entry = { url, name: "", size: 0, stream: true, pending: true };
-  media.set(url, entry);
+async function offerStream(details, found) {
+  const state = tabState(details.tabId);
+  if (state.media.has(found.key) || state.children.has(found.key)) return;
+  const entry = { url: details.url, key: found.key, name: "", size: 0, stream: true, pending: true,
+                  mime: found.mime, source: new URL(details.url).hostname };
+  state.media.set(found.key, entry);
 
-  const answer = await askHost({ type: "inspect", url, referrer: originOf(details.documentUrl || details.initiator) });
-  if (!mediaByTab.has(tabId) || streamChildren.get(tabId).has(url)) return;
+  const answer = await askHost({ type: "inspect", url: details.url, referrer: originOf(details.initiator || details.documentUrl) });
+  const current = tabs.get(details.tabId);
+  if (!current || current.children.has(found.key)) return;
   delete entry.pending;
   if (answer && answer.ok && answer.kind === "file") {
-    media.delete(url);
+    current.media.delete(found.key);
+    saveSoon();
     return;
   }
   entry.kind = answer ? answer.kind : "";
   entry.variants = (answer && answer.variants) || [];
+  entry.duration = (answer && answer.duration) || 0;
   entry.error = answer && answer.ok ? "" : (answer ? answer.error : "No answer from Haul.");
   entry.encrypted = !!(answer && answer.encrypted);
   entry.restricted = !!(answer && answer.restricted);
   entry.unreachable = !!(answer && answer.unreachable);
 
   for (const child of (answer && answer.children) || []) {
-    streamChildren.get(tabId).add(child);
-    if (media.delete(child)) tell(tabId, { type: "haul-media-remove", url: child });
+    const childKey = mediaKey(child);
+    current.children.add(childKey);
+    if (current.media.delete(childKey)) tell(details.tabId, { type: "haul-media-remove", key: childKey });
   }
-  tell(tabId, { type: "haul-media", media: entry });
+  saveSoon();
+  tell(details.tabId, { type: "haul-media", media: entry });
 }
 
-function describeMedia(details) {
-  const url = new URL(details.url);
-  const type = header(details, "content-type").toLowerCase();
-  const disposition = /filename\*?=(?:UTF-8'')?"?([^";]+)/i.exec(header(details, "content-disposition"));
-  const name = decodeURIComponent(disposition ? disposition[1] : url.pathname.split("/").pop() || url.hostname);
-  if (STREAM_PIECE.test(url.pathname) || /mpegurl|dash\+xml/.test(type) || url.searchParams.has("range")) return null;
-  if (!/^(video|audio)\//.test(type) && !MEDIA_NAME.test(name)) return null;
-
-  const total = /\/(\d+)\s*$/.exec(header(details, "content-range"));
-  const size = Number(total ? total[1] : header(details, "content-length")) || 0;
-  return size >= MIN_MEDIA_SIZE ? { url: details.url, name, size } : null;
+function isExcludedPage(details) {
+  try {
+    const page = details.initiator || details.documentUrl;
+    return !!page && EXCLUDED_HOSTS.test(new URL(page).hostname);
+  } catch {
+    return false;
+  }
 }
 
 api.webRequest.onHeadersReceived.addListener(
   (details) => {
-    if (details.tabId < 0 || isExcluded(details)) return;
-    if (isManifest(details)) {
-      offerStream(details);
-      return;
-    }
-    if (details.type === "xmlhttprequest") return; // players fetch stream pieces this way
-    const media = describeMedia(details);
-    if (!media) return;
-    tabState(details.tabId).set(media.url, media);
-    tell(details.tabId, { type: "haul-media", media });
+    if (details.tabId < 0 || isExcludedPage(details)) return;
+    const found = classifyResponse(details);
+    if (!found) return;
+    restored.then(() => {
+      if (found.stream) {
+        offerStream(details, found);
+        return;
+      }
+      const state = tabState(details.tabId);
+      // With a manifest on the page, whatever a script fetches next is that stream's pieces.
+      if (found.via === "xmlhttprequest" && [...state.media.values()].some((m) => m.stream)) return;
+      if (state.children.has(found.key)) return;
+      const known = state.media.get(found.key);
+      if (known) {
+        known.size = known.size || found.size;
+        return;
+      }
+      state.media.set(found.key, found);
+      saveSoon();
+      tell(details.tabId, { type: "haul-media", media: found });
+    });
   },
-  // Players such as hls.js and dash.js fetch manifests as xmlhttprequest.
-  { urls: ["http://*/*", "https://*/*"], types: ["media", "object", "other", "xmlhttprequest"] },
+  // main_frame: a media file opened directly. xmlhttprequest: players that fetch by script.
+  { urls: ["http://*/*", "https://*/*"], types: ["media", "object", "other", "xmlhttprequest", "main_frame", "sub_frame"] },
   ["responseHeaders"]
 );
 
 // A new page starts with an empty list.
 api.webRequest.onBeforeRequest.addListener(
-  (details) => {
-    mediaByTab.delete(details.tabId);
-    streamChildren.delete(details.tabId);
-  },
+  (details) => { restored.then(() => forgetTab(details.tabId)); },
   { urls: ["http://*/*", "https://*/*"], types: ["main_frame"] }
 );
-api.tabs.onRemoved.addListener((tabId) => {
-  mediaByTab.delete(tabId);
-  streamChildren.delete(tabId);
-});
+api.tabs.onRemoved.addListener((tabId) => { restored.then(() => forgetTab(tabId)); });
 
 api.runtime.onMessage.addListener((message, sender, respond) => {
+  const tabId = sender.tab && sender.tab.id;
   if (message.type === "haul-list") {
-    respond([...(mediaByTab.get(sender.tab.id) ?? new Map()).values()].filter((media) => !media.pending));
+    restored.then(() => {
+      const state = tabs.get(tabId);
+      respond(state ? [...state.media.values()].filter((media) => !media.pending) : []);
+    });
+    return true;
+  }
+  if (message.type === "haul-count") {
+    api.action.setBadgeText({ tabId, text: message.count ? String(message.count) : "" });
     return false;
+  }
+  if (message.type === "haul-verify") {
+    askHost({ type: "verify", url: message.url, referrer: originOf(sender.tab && sender.tab.url) }).then(respond);
+    return true;
+  }
+  if (message.type === "haul-browser-download") {
+    passThrough.add(message.url);
+    api.downloads.download({ url: message.url }).then(() => respond({ ok: true }), (e) => respond({ ok: false, error: e.message }));
+    return true;
   }
   if (message.type === "haul-add") {
     sendToHaul(message.url, message.filename, sender.tab && sender.tab.url, message.stream, message.variant).then(respond);
-    return true; // the answer comes later
+    return true;
   }
   return false;
 });

@@ -28,6 +28,7 @@ jobs:
       - name: Test
         run: ctest --preset linux-debug
 
+<<<<<<< HEAD
       - name: Build Debian package
         run: |
           sudo apt-get install -y --no-install-recommends dpkg-dev
@@ -42,3 +43,7 @@ jobs:
         with:
           name: haul-deb-ubuntu-24.04
           path: build/linux-release/haul_*.deb
+=======
+      - name: Browser extension in real Chrome
+        run: node tests/browser/e2e.mjs build/linux-debug/src/haul-native-host
+>>>>>>> feature/shared-core

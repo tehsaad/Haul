@@ -2,6 +2,7 @@
 
 #include "app/InstanceGuard.h"
 #include "media/StreamResolver.h"
+#include "network/HttpProbe.h"
 
 #include <QByteArray>
 #include <QJsonObject>
@@ -28,6 +29,11 @@ bool parseBrowserMessage(const QByteArray &json, IpcCommand *command, QString *e
 // can show them using this same parser. The answer never contains a login or a key.
 bool isInspectMessage(const QByteArray &json, QUrl *url, QByteArray *referer);
 QJsonObject describeStream(const StreamInfo &info);
+
+// {"type":"verify","url":...} checks a media file with the server: its real first bytes, true size
+// and whether it can resume. It answers from the response only and uses no browser cookies.
+bool isVerifyMessage(const QByteArray &json, QUrl *url, QByteArray *referer);
+QJsonObject describeFile(const ProbeResult &probe);
 
 QByteArray nativeHostManifest(const QString &hostPath, bool firefox);
 

@@ -23,6 +23,8 @@ Endpoints
   /redirect?to=<path>          302 to <path> on this server
   /auth/<size>      needs HTTP Basic login test:secret
   /cookie/<size>    needs the cookie session=abc
+  /m/<name>         a media file with real signature bytes (fmt=, size=, ct=, cd=, body=html, chunked=1)
+  /mediapage        one page with several media files, duplicates and fakes
   /redirect-file               302 to file:///etc/passwd (must be refused by the client)
 """
 import os
@@ -36,6 +38,29 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import parse_qs, urlparse
 
 PRIME = 65521
+
+# Real signatures, followed by padding, for every supported format.
+MEDIA_FIXTURES = {
+    "mp4": ("video/mp4", b"\x00\x00\x00\x18ftypisom\x00\x00\x02\x00isom"),
+    "m4v": ("video/x-m4v", b"\x00\x00\x00\x18ftypM4V \x00\x00\x02\x00M4V "),
+    "mov": ("video/quicktime", b"\x00\x00\x00\x14ftypqt  \x00\x00\x02\x00qt  "),
+    "3gp": ("video/3gpp", b"\x00\x00\x00\x18ftyp3gp4\x00\x00\x02\x003gp4"),
+    "mkv": ("video/x-matroska", b"\x1a\x45\xdf\xa3\x01\x00\x00\x00\x00\x00\x00\x1fmatroska"),
+    "webm": ("video/webm", b"\x1a\x45\xdf\xa3\x01\x00\x00\x00\x00\x00\x00\x1fwebm"),
+    "avi": ("video/x-msvideo", b"RIFF\x00\x00\x00\x00AVI LIST"),
+    "flv": ("video/x-flv", b"FLV\x01\x05\x00\x00\x00\x09"),
+    "ts": ("video/mp2t", (b"\x47" + b"\x00" * 187) * 8),
+    "mpeg": ("video/mpeg", b"\x00\x00\x01\xba\x44\x00\x04"),
+    "mpg": ("video/mpeg", b"\x00\x00\x01\xb3\x14\x00\xf0"),
+    "mp3": ("audio/mpeg", b"ID3\x04\x00\x00\x00\x00\x00\x00"),
+    "wav": ("audio/wav", b"RIFF\x00\x00\x00\x00WAVEfmt "),
+    "flac": ("audio/flac", b"fLaC\x00\x00\x00\x22"),
+    "aac": ("audio/aac", b"\xff\xf1\x50\x80\x00\x1f\xfc"),
+    "m4a": ("audio/mp4", b"\x00\x00\x00\x18ftypM4A \x00\x00\x02\x00M4A "),
+    "ogg": ("audio/ogg", b"OggS\x00\x02\x00\x00\x00\x00\x00\x00\x00\x00\x01\x1e\x01vorbis"),
+    "opus": ("audio/opus", b"OggS\x00\x02\x00\x00\x00\x00\x00\x00\x00\x00OpusHead"),
+    "wma": ("audio/x-ms-wma", bytes.fromhex("3026B2758E66CF11A6D900AA0062CE6C")),
+}
 _blocks = {}
 _state_lock = threading.Lock()
 _mutable_version = 1
@@ -76,7 +101,60 @@ class Handler(BaseHTTPRequestHandler):
         self.send_header("Content-Length", str(len(body)))
         self.end_headers()
         if self.command != "HEAD":
-            self.wfile.write(body)
+            try:
+                self.wfile.write(body)
+            except (BrokenPipeError, ConnectionResetError):
+                self.close_connection = True
+
+    def serve_media(self, path, q):
+        """A file with a real signature and any size; options set what its headers say."""
+        if q.get("deny") == "1":
+            return self.send_simple(403, b"denied")
+        name = path[3:]
+        extension = name.rsplit(".", 1)[-1].lower() if "." in name else ""
+        fmt = q.get("fmt", extension)
+        mime, magic = MEDIA_FIXTURES.get(fmt, ("application/octet-stream", b""))
+        if q.get("body") == "html":
+            magic = b"<!doctype html><html><body>Please log in</body></html>"
+        size = int(q.get("size", "2000000"))
+        mime = q.get("ct", mime)
+
+        start, end = 0, size
+        partial = False
+        rm = re.match(r"^bytes=(\d+)-(\d*)$", (self.headers.get("Range") or "").strip())
+        if rm and q.get("ranges", "1") != "0" and int(rm.group(1)) < size:
+            start = int(rm.group(1))
+            end = min(int(rm.group(2)) + 1 if rm.group(2) else size, size)
+            partial = True
+
+        self.send_response(206 if partial else 200)
+        if mime:
+            self.send_header("Content-Type", mime)
+        if "cd" in q:
+            self.send_header("Content-Disposition", q["cd"])
+        if partial:
+            self.send_header("Content-Range", "bytes %d-%d/%d" % (start, end - 1, size))
+        if q.get("chunked") == "1":
+            self.send_header("Connection", "close")
+            self.close_connection = True
+        else:
+            self.send_header("Content-Length", str(end - start))
+        self.send_header("Accept-Ranges", "bytes")
+        self.end_headers()
+        if self.command == "HEAD":
+            return
+        pos = start
+        padding = b"\0" * 65536
+        try:
+            while pos < end:
+                if pos < len(magic):
+                    data = magic[pos:min(len(magic), end)]
+                else:
+                    data = padding[:min(len(padding), end - pos)]
+                self.wfile.write(data)
+                pos += len(data)
+        except (BrokenPipeError, ConnectionResetError, OSError):
+            self.close_connection = True
 
     def serve_stream(self, path, q, query):
         """Synthetic streams. Options travel in the query string so every fixture is deterministic."""
@@ -206,6 +284,27 @@ class Handler(BaseHTTPRequestHandler):
                 return self.send_simple(404, b"not found")
             with open(target, "rb") as f:
                 return self.send_simple(200, f.read())
+
+        if path == "/mediapage":
+            html = """<!doctype html><title>Media page</title>
+<audio src="/m/song.mp3?size=300000"></audio>
+<audio src="/redirect?to=/m/moved.mp3%3Fsize%3D200000"></audio>
+<a id="a1" href="/m/album.flac?size=400000">flac</a>
+<a id="a2" href="/m/song.mp3?size=300000&token=abc123">the same song, signed</a>
+<a id="a3" href="/m/talk.wma?size=500000">wma</a>
+<a id="a4" href="/m/fake.mp4?ct=application/octet-stream&body=html&size=300000">a page pretending to be a video</a>
+<a id="a5" href="/m/huge.mkv?size=6000000000">large</a>
+<a id="a6" href="/redirect?to=/m/album.flac?size=400000">redirects to the flac</a>
+<script>
+fetch("/m/playerfile?fmt=mp4&size=3000000", {headers: {Range: "bytes=0-1023"}});
+fetch("/m/seg-12.mp4?size=3000000");
+fetch("/m/piece.ts?size=3000000");
+fetch("/m/notes.mp4?ct=text/html&size=3000000");
+</script>"""
+            return self.send_simple(200, html.encode(), {"Content-Type": "text/html"})
+
+        if path.startswith("/m/"):
+            return self.serve_media(path, q)
 
         if path == "/redirect-file":
             return self.send_simple(302, b"", {"Location": "file:///etc/passwd"})

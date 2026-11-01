@@ -37,6 +37,7 @@ The extension talks to Haul through the browser's native messaging, not a networ
 * The host accepts one message of at most 64 KiB and forwards only a link that passes the same URL validation as the Add dialog.
 * A link from the browser always opens the Add dialog. The browser can suggest a download but cannot start one.
 * The extension asks to run on all http and https sites, which Chrome words as "read and change all your data". It needs this to notice media files and show its panel. It looks at response headers, `<video>`/`<audio>` addresses, and the page's title (to name the video). It never reads cookies, passwords or other page text. Nothing is sent anywhere except to Haul on this computer. Manifests are read by the native host, without the browser's cookies.
+* Watching responses sends nothing to any server. Haul contacts a server itself only for a manifest it found, or when you open the panel, to read the first bytes of the listed files. If a site uses one-time links, that check could use one up.
 * Only the origin of the page a link came from is passed along (`https://site/`), not the full address. It is kept in memory like a login.
 
 ## Single-instance channel
@@ -60,4 +61,8 @@ Haul handles unencrypted HLS and DASH only, and has no site-specific extraction.
 * **Refused access stops the download.** A 401, 403 or 410 on a piece is permanent and not retried, and a web page served in place of video is rejected rather than saved.
 * **Manifests are untrusted.** Size is capped at 10 MiB and pieces at 200,000. XML is parsed without fetching external entities, piece addresses must be http or https, and a manifest on the public internet can't point at localhost or private network addresses.
 * YouTube hosts are excluded from detection. Live streams are refused because they never end.
+
+## Servers that refuse Haul
+
+Haul always sends its own `User-Agent` and never imitates a browser, and it doesn't use browser cookies. A server that refuses it gets its way: the download continues in the browser, which the site already accepts, or stops in Haul with a message. This is deliberate, and getting past such a refusal is out of scope.
 

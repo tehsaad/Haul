@@ -1,5 +1,7 @@
 #include "BrowserIntegration.h"
 
+#include "media/MediaSniffer.h"
+
 #include <QCoreApplication>
 #include <QDir>
 #include <QFile>
@@ -73,6 +75,11 @@ QJsonObject describeStream(const StreamInfo &info)
         v["id"] = variant.id;
         v["label"] = variant.displayName;
         v["size"] = static_cast<double>(variant.estimatedBytes);
+        v["width"] = variant.width;
+        v["height"] = variant.height;
+        v["bitrate"] = static_cast<double>(variant.bandwidth);
+        v["videoBitrate"] = static_cast<double>(variant.videoBandwidth);
+        v["audioBitrate"] = static_cast<double>(variant.audioBandwidth);
         variants.append(v);
     }
     o["variants"] = variants;
@@ -80,6 +87,47 @@ QJsonObject describeStream(const StreamInfo &info)
     for (int i = 0; i < info.childUrls.size() && i < 60; ++i)
         children.append(info.childUrls[i]);
     o["children"] = children;
+    return o;
+}
+
+bool isVerifyMessage(const QByteArray &json, QUrl *url, QByteArray *referer)
+{
+    const QJsonObject o = QJsonDocument::fromJson(json).object();
+    if (o.value("type").toString() != QLatin1String("verify"))
+        return false;
+    *url = QUrl(o.value("url").toString());
+    const QString origin = o.value("referrer").toString();
+    if (origin.startsWith(QLatin1String("http")))
+        *referer = origin.toUtf8();
+    return true;
+}
+
+QJsonObject describeFile(const ProbeResult &probe)
+{
+    QJsonObject o;
+    o["ok"] = probe.ok;
+    if (!probe.ok) {
+        o["error"] = probe.error.message;
+        o["restricted"] = probe.error.httpStatus == 401 || probe.error.httpStatus == 403;
+        o["gone"] = probe.error.httpStatus == 404 || probe.error.httpStatus == 410;
+        return o;
+    }
+    const SniffResult sniff = sniffMedia(probe.head);
+    const QString type = probe.contentType.toLower();
+    QString format = sniff.format;
+    // ASF holds both WMA and WMV; only the headers can tell them apart.
+    if (format == QLatin1String("wma") && type.startsWith(QLatin1String("video/")))
+        format = QStringLiteral("wmv");
+    o["format"] = format;
+    o["kind"] = sniff.kind == SniffResult::Video ? QStringLiteral("video")
+        : sniff.kind == SniffResult::Audio ? QStringLiteral("audio") : QString();
+    o["notMedia"] = sniff.kind == SniffResult::NotMedia || sniff.kind == SniffResult::Manifest
+        || type.startsWith(QLatin1String("text/html")) || type.startsWith(QLatin1String("application/json"));
+    o["mime"] = probe.contentType;
+    o["size"] = static_cast<double>(probe.totalSize);
+    o["resumable"] = probe.rangeSupported;
+    o["name"] = probe.suggestedName;
+    o["effectiveUrl"] = probe.effectiveUrl;
     return o;
 }
 

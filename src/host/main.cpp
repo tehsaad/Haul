@@ -4,6 +4,7 @@
 
 #include "app/InstanceGuard.h"
 #include "core/UrlValidator.h"
+#include "network/HttpProbe.h"
 #include "platform/BrowserIntegration.h"
 
 #include <QCoreApplication>
@@ -90,6 +91,20 @@ int main(int argc, char *argv[])
         NetworkOptions options;
         options.login.referer = referer;
         writeReply(platform::describeStream(inspectStream(check.url, options)));
+        curl_global_cleanup();
+        return 0;
+    }
+    if (platform::isVerifyMessage(message, &inspectUrl, &referer)) {
+        const UrlCheck check = validateDownloadUrl(inspectUrl.toString());
+        if (!check.ok) {
+            reply(false, check.error);
+            return 1;
+        }
+        curl_global_init(CURL_GLOBAL_DEFAULT);
+        NetworkOptions options;
+        options.connectTimeoutSeconds = 15;
+        options.login.referer = referer;
+        writeReply(platform::describeFile(probeUrl(check.url, options)));
         curl_global_cleanup();
         return 0;
     }
