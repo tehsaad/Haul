@@ -22,6 +22,7 @@ public:
 
     QMenu *buildMenu(qint64 id, QWidget *parent);
 
+    void askForLogin(qint64 id);
     void openFile(qint64 id);
     void openFolder(qint64 id);
     void copyUrl(qint64 id);

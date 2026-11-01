@@ -27,13 +27,26 @@ Please open a private security advisory on the GitHub repository instead of a pu
 * Authenticated downloads (cookies, OAuth, HTTP auth). These are unsupported by design for now.
 * DRM, paywall or access-control circumvention. Haul will never implement this.
 
-## Browser integration (future): security requirements
 
-There is no local service or listener in Haul today. If browser hand-off is added, it must:
+## Browser hand-off
 
-1. Be **off by default** and enabled explicitly in Settings.
-2. Use **native messaging** (the browser starts Haul over stdio) in preference to a network port. If a port is unavoidable, bind it to `127.0.0.1` only, never `0.0.0.0`.
-3. Require a per-installation random token on every request, and check the `Origin` and `Host` headers. This defeats drive-by requests from web pages and DNS rebinding, because a rebinding page sends its own `Host`.
-4. Accept only `{url, suggestedName, referrer}`, and feed them through the same `validateDownloadUrl` and `sanitizeFileName` checks. The destination folder is never chosen by the browser.
-5. Never expose file reads, directory listings or command execution.
-6. Request only the `downloads` and `nativeMessaging` extension permissions.
+The extension talks to Haul through the browser's native messaging, not a network port, so web pages have no way to reach Haul.
+
+* The browser only starts `haul-native-host` for the extension listed in the manifest. The host also checks the caller it was given.
+* Registration is opt-in (Settings → Browser), per user, and removed when the option is turned off.
+* The host accepts one message of at most 64 KiB and forwards only a link that passes the same URL validation as the Add dialog.
+* A link from the browser always opens the Add dialog. The browser can suggest a download but cannot start one.
+* The extension asks for no host permissions and never reads cookies, passwords or page contents.
+
+## Single-instance channel
+
+A lock file and a local socket in a per-user location (`$XDG_RUNTIME_DIR`, or a per-user named pipe on Windows) keep one copy running. The socket is restricted to the current user, messages are capped at 64 KiB, and URLs are validated again on arrival. Nothing listens on the network.
+
+## Logins
+
+User names, passwords and cookies are kept in memory only: they are never written to the database, settings or logs, and links containing `user:password@` are refused. libcurl does not send them to a different host after a redirect. The dialog warns when a login would travel over unencrypted `http://` or `ftp://`.
+
+## FTP
+
+Plain FTP sends everything, including passwords, unencrypted. `ftps://` verifies the server's certificate like HTTPS does. A web server cannot redirect Haul to FTP.
+

@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.21)
 
 project(Haul
-    VERSION 0.1.0
+    VERSION 0.2.0
     DESCRIPTION "Open-source desktop download manager"
     HOMEPAGE_URL "https://github.com/tehsaad/Haul"
     LANGUAGES CXX)
@@ -15,7 +15,7 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 option(HAUL_BUILD_TESTS "Build the automated test suite" ON)
 
-find_package(Qt6 6.2 REQUIRED COMPONENTS Core Gui Widgets Svg Concurrent)
+find_package(Qt6 6.2 REQUIRED COMPONENTS Core Gui Widgets Svg Network Concurrent)
 find_package(CURL REQUIRED)
 find_package(SQLite3 REQUIRED)
 
@@ -35,4 +35,5 @@ endif()
 
 # Installation layout shared by the Linux package and the Windows installer.
 include(GNUInstallDirs)
-install(TARGETS haul RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
+install(TARGETS haul haul-native-host RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
+install(DIRECTORY browser/ DESTINATION ${CMAKE_INSTALL_DATADIR}/haul/browser-extension)

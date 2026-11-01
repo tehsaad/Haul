@@ -32,7 +32,8 @@ private slots:
         QTest::newRow("surrounding spaces") << "  https://example.com/x  " << true;
         QTest::newRow("empty") << "" << false;
         QTest::newRow("no scheme") << "example.com/file.zip" << false;
-        QTest::newRow("ftp") << "ftp://example.com/file" << false;
+        QTest::newRow("ftp") << "ftp://example.com/file" << true;
+        QTest::newRow("gopher") << "gopher://example.com/file" << false;
         QTest::newRow("file") << "file:///etc/passwd" << false;
         QTest::newRow("javascript") << "javascript:alert(1)" << false;
         QTest::newRow("data") << "data:text/plain,hi" << false;

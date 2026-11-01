@@ -20,6 +20,7 @@
 #include <QLabel>
 #include <QLineEdit>
 #include <QPushButton>
+#include <QToolButton>
 #include <QVBoxLayout>
 #include <QtConcurrent/QtConcurrentRun>
 
@@ -31,16 +32,12 @@ AddDownloadDialog::AddDownloadDialog(DownloadManager *manager, SettingsRepositor
     , m_settings(settings)
 {
     setWindowTitle(QStringLiteral("Add download"));
-    setMinimumWidth(560);
+    setMinimumWidth(500);
     setModal(true);
 
     auto *root = new QVBoxLayout(this);
-    root->setContentsMargins(24, 22, 24, 20);
-    root->setSpacing(14);
-
-    root->addWidget(makeLabel(QStringLiteral("Add download"), QStringLiteral("title"), this));
-    root->addWidget(makeLabel(QStringLiteral("Paste an http:// or https:// link. Haul checks it with the server before downloading."),
-                              QStringLiteral("subtitle"), this));
+    root->setContentsMargins(14, 12, 14, 12);
+    root->setSpacing(8);
 
     // URL
     root->addWidget(makeLabel(QStringLiteral("URL"), QStringLiteral("caption"), this));
@@ -61,9 +58,9 @@ AddDownloadDialog::AddDownloadDialog(DownloadManager *manager, SettingsRepositor
     info->setHorizontalSpacing(18);
     info->setVerticalSpacing(6);
     auto *statusRow = new QHBoxLayout;
-    m_inspectStatus = makeLabel(QStringLiteral("Waiting for a URL…"), QStringLiteral("muted"), infoCard);
+    m_inspectStatus = makeLabel(QStringLiteral("Paste a link above."), QStringLiteral("muted"), infoCard);
     m_inspectStatus->setWordWrap(true);
-    m_cancelInspect = makeButton(QStringLiteral("Cancel check"), QString(), QStringLiteral("ghost"), infoCard);
+    m_cancelInspect = makeButton(QStringLiteral("Stop"), QString(), QStringLiteral("ghost"), infoCard);
     m_cancelInspect->hide();
     statusRow->addWidget(m_inspectStatus, 1);
     statusRow->addWidget(m_cancelInspect);
@@ -73,7 +70,7 @@ AddDownloadDialog::AddDownloadDialog(DownloadManager *manager, SettingsRepositor
     m_typeValue = makeLabel(QStringLiteral("—"), QStringLiteral("value"), infoCard);
     info->addWidget(makeLabel(QStringLiteral("Size"), QStringLiteral("muted"), infoCard), 1, 0);
     info->addWidget(m_sizeValue, 1, 1);
-    info->addWidget(makeLabel(QStringLiteral("Resume / multi-connection"), QStringLiteral("muted"), infoCard), 2, 0);
+    info->addWidget(makeLabel(QStringLiteral("Resume"), QStringLiteral("muted"), infoCard), 2, 0);
     info->addWidget(m_resumeValue, 2, 1);
     info->addWidget(makeLabel(QStringLiteral("Type"), QStringLiteral("muted"), infoCard), 3, 0);
     info->addWidget(m_typeValue, 3, 1);
@@ -84,13 +81,13 @@ AddDownloadDialog::AddDownloadDialog(DownloadManager *manager, SettingsRepositor
     auto *form = new QGridLayout;
     form->setHorizontalSpacing(10);
     form->setVerticalSpacing(6);
-    form->addWidget(makeLabel(QStringLiteral("SAVE TO"), QStringLiteral("caption"), this), 0, 0, 1, 2);
+    form->addWidget(makeLabel(QStringLiteral("Save to"), QStringLiteral("caption"), this), 0, 0, 1, 2);
     m_directory = new QLineEdit(m_settings->current().downloadDirectory, this);
     auto *browse = makeButton(QStringLiteral("Browse…"), QStringLiteral("folder"), QString(), this);
     form->addWidget(m_directory, 1, 0);
     form->addWidget(browse, 1, 1);
 
-    form->addWidget(makeLabel(QStringLiteral("FILE NAME (OPTIONAL)"), QStringLiteral("caption"), this), 2, 0, 1, 2);
+    form->addWidget(makeLabel(QStringLiteral("File name (optional)"), QStringLiteral("caption"), this), 2, 0, 1, 2);
     m_fileName = new QLineEdit(this);
     m_fileName->setPlaceholderText(QStringLiteral("Detected from the server"));
     form->addWidget(m_fileName, 3, 0, 1, 2);
@@ -99,8 +96,8 @@ AddDownloadDialog::AddDownloadDialog(DownloadManager *manager, SettingsRepositor
     m_conflictHint->hide();
     form->addWidget(m_conflictHint, 4, 0, 1, 2);
 
-    form->addWidget(makeLabel(QStringLiteral("PRIORITY"), QStringLiteral("caption"), this), 5, 0);
-    form->addWidget(makeLabel(QStringLiteral("SHA-256 (OPTIONAL)"), QStringLiteral("caption"), this), 5, 1);
+    form->addWidget(makeLabel(QStringLiteral("Priority"), QStringLiteral("caption"), this), 5, 0);
+    form->addWidget(makeLabel(QStringLiteral("SHA-256 (optional)"), QStringLiteral("caption"), this), 5, 1);
     m_priority = new QComboBox(this);
     m_priority->addItem(QStringLiteral("Low"), static_cast<int>(Priority::Low));
     m_priority->addItem(QStringLiteral("Normal"), static_cast<int>(Priority::Normal));
@@ -113,6 +110,35 @@ AddDownloadDialog::AddDownloadDialog(DownloadManager *manager, SettingsRepositor
     form->setColumnStretch(0, 1);
     form->setColumnStretch(1, 1);
     root->addLayout(form);
+
+    // Login, tucked away until it is needed
+    m_loginToggle = new QToolButton(this);
+    m_loginToggle->setObjectName(QStringLiteral("Disclosure"));
+    m_loginToggle->setText(QStringLiteral("Login"));
+    m_loginToggle->setCheckable(true);
+    m_loginToggle->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
+    m_loginToggle->setArrowType(Qt::RightArrow);
+    root->addWidget(m_loginToggle, 0, Qt::AlignLeft);
+    m_loginBox = new QWidget(this);
+    auto *login = new QGridLayout(m_loginBox);
+    login->setContentsMargins(0, 0, 0, 0);
+    login->setHorizontalSpacing(10);
+    login->setVerticalSpacing(4);
+    m_username = new QLineEdit(m_loginBox);
+    m_username->setPlaceholderText(QStringLiteral("User name"));
+    m_password = new QLineEdit(m_loginBox);
+    m_password->setPlaceholderText(QStringLiteral("Password"));
+    m_password->setEchoMode(QLineEdit::Password);
+    m_cookie = new QLineEdit(m_loginBox);
+    m_cookie->setPlaceholderText(QStringLiteral("Cookie, if the site needs one: name=value"));
+    login->addWidget(m_username, 0, 0);
+    login->addWidget(m_password, 0, 1);
+    login->addWidget(m_cookie, 1, 0, 1, 2);
+    m_loginNote = makeLabel(QStringLiteral("Not saved. Haul forgets this when it closes."), QStringLiteral("muted"), m_loginBox);
+    m_loginNote->setWordWrap(true);
+    login->addWidget(m_loginNote, 2, 0, 1, 2);
+    m_loginBox->hide();
+    root->addWidget(m_loginBox);
 
     m_formError = makeLabel(QString(), QStringLiteral("error"), this);
     m_formError->setWordWrap(true);
@@ -138,6 +164,12 @@ AddDownloadDialog::AddDownloadDialog(DownloadManager *manager, SettingsRepositor
     m_debounce.setSingleShot(true);
     m_debounce.setInterval(450);
 
+    connect(m_loginToggle, &QToolButton::toggled, this, [this](bool open) {
+        m_loginToggle->setArrowType(open ? Qt::DownArrow : Qt::RightArrow);
+        m_loginBox->setVisible(open);
+    });
+    for (QLineEdit *field : { m_username, m_password, m_cookie })
+        connect(field, &QLineEdit::textEdited, this, &AddDownloadDialog::onUrlEdited);
     connect(m_url, &QLineEdit::textChanged, this, &AddDownloadDialog::onUrlEdited);
     connect(&m_debounce, &QTimer::timeout, this, &AddDownloadDialog::startInspection);
     connect(m_cancelInspect, &QPushButton::clicked, this, &AddDownloadDialog::cancelInspection);
@@ -171,8 +203,31 @@ void AddDownloadDialog::setUrl(const QString &url)
     m_url->setText(url);
 }
 
+void AddDownloadDialog::setFileName(const QString &name)
+{
+    m_fileName->setText(sanitizeFileName(name));
+    m_nameEditedByUser = true;
+    updateConflictHint();
+}
+
+DownloadLogin AddDownloadDialog::login() const
+{
+    DownloadLogin value;
+    value.username = m_username->text();
+    value.password = m_password->text();
+    value.cookie = m_cookie->text().trimmed().toUtf8();
+    return value;
+}
+
 void AddDownloadDialog::onUrlEdited()
 {
+    const QString scheme = QUrl(m_url->text().trimmed()).scheme().toLower();
+    const bool plainText = scheme == QLatin1String("http") || scheme == QLatin1String("ftp");
+    m_loginNote->setText(plainText && !login().isEmpty()
+                             ? QStringLiteral("This link isn't encrypted, so anyone on the network could read this login. Not saved.")
+                             : QStringLiteral("Not saved. Haul forgets this when it closes."));
+    setRole(m_loginNote, plainText && !login().isEmpty() ? QStringLiteral("warning") : QStringLiteral("muted"));
+
     cancelInspection();
     m_probeFailedPermanently = false;
     m_sizeValue->setText(QStringLiteral("—"));
@@ -183,14 +238,14 @@ void AddDownloadDialog::onUrlEdited()
     if (text.isEmpty()) {
         m_urlError->hide();
         m_url->setProperty("invalid", false);
-        m_inspectStatus->setText(QStringLiteral("Waiting for a URL…"));
+        m_inspectStatus->setText(QStringLiteral("Paste a link above."));
     } else {
         const UrlCheck check = validateDownloadUrl(text);
         m_url->setProperty("invalid", !check.ok);
         m_urlError->setVisible(!check.ok);
         m_urlError->setText(check.error);
         if (check.ok) {
-            m_inspectStatus->setText(QStringLiteral("Checking soon…"));
+            m_inspectStatus->setText(QStringLiteral("Checking…"));
             m_debounce.start();
         } else {
             m_inspectStatus->setText(QStringLiteral("Fix the URL to continue."));
@@ -212,15 +267,17 @@ void AddDownloadDialog::startInspection()
 
     m_probeCancel = std::make_shared<std::atomic_bool>(false);
     m_inspectedUrl = check.url.toString();
-    m_inspectStatus->setText(QStringLiteral("Checking the server…"));
+    m_inspectStatus->setText(QStringLiteral("Checking…"));
     setRole(m_inspectStatus, QStringLiteral("muted"));
     m_cancelInspect->show();
 
     const QUrl url = check.url;
     const std::shared_ptr<std::atomic_bool> cancel = m_probeCancel;
-    m_watcher.setFuture(QtConcurrent::run([url, cancel] {
+    const DownloadLogin credentials = login();
+    m_watcher.setFuture(QtConcurrent::run([url, cancel, credentials] {
         NetworkOptions options;
         options.connectTimeoutSeconds = 15;
+        options.login = credentials;
         return probeUrl(url, options, cancel.get());
     }));
 }
@@ -245,6 +302,8 @@ void AddDownloadDialog::onInspectionFinished()
         return; // the URL changed while we were checking
 
     if (!result.ok) {
+        if (result.error.httpStatus == 401 || result.error.httpStatus == 403)
+            m_loginToggle->setChecked(true);
         m_probeFailedPermanently = result.error.kind == ErrorKind::Permanent;
         m_inspectStatus->setText(result.error.message
                                  + (m_probeFailedPermanently ? QString()
@@ -254,7 +313,7 @@ void AddDownloadDialog::onInspectionFinished()
         return;
     }
 
-    m_inspectStatus->setText(QStringLiteral("The server responded (HTTP %1).").arg(result.httpStatus));
+    m_inspectStatus->setText(QStringLiteral("Looks good."));
     setRole(m_inspectStatus, QStringLiteral("success"));
     m_sizeValue->setText(result.totalSize >= 0 ? formatBytes(result.totalSize)
                                                : QStringLiteral("Unknown (the server did not say)"));
@@ -325,6 +384,7 @@ void AddDownloadDialog::submit(bool startNow)
     request.startNow = startNow;
     request.priority = static_cast<Priority>(m_priority->currentData().toInt());
     request.expectedSha256 = checksum;
+    request.login = login();
 
     QString error;
     m_createdId = m_manager->addDownload(request, &error);

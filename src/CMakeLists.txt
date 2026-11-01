@@ -23,12 +23,15 @@ add_library(haul_engine STATIC
     storage/DownloadRepository.cpp
     storage/SettingsRepository.cpp
     platform/Platform.cpp
+    platform/BrowserIntegration.cpp
     app/DownloadManager.cpp
+    app/InstanceGuard.cpp
 )
 target_include_directories(haul_engine PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
-target_link_libraries(haul_engine PUBLIC Qt6::Core CURL::libcurl SQLite::SQLite3)
+target_link_libraries(haul_engine PUBLIC Qt6::Core Qt6::Network CURL::libcurl SQLite::SQLite3)
 target_compile_definitions(haul_engine PUBLIC
     HAUL_VERSION="${PROJECT_VERSION}")
+target_compile_definitions(haul_engine PRIVATE HAUL_SOURCE_DIR="${PROJECT_SOURCE_DIR}")
 
 # The Qt Widgets user interface.
 add_library(haul_ui STATIC
@@ -48,6 +51,10 @@ target_link_libraries(haul_ui PUBLIC haul_engine Qt6::Widgets Qt6::Svg Qt6::Conc
 
 add_executable(haul WIN32 app/main.cpp)
 target_link_libraries(haul PRIVATE haul_ui)
+
+# Small console helper the browser starts for the extension (native messaging).
+add_executable(haul-native-host host/main.cpp)
+target_link_libraries(haul-native-host PRIVATE haul_engine)
 
 # Developer benchmark (not installed).
 add_executable(bench_segments EXCLUDE_FROM_ALL ${PROJECT_SOURCE_DIR}/tools/bench_segments.cpp)

@@ -34,8 +34,49 @@ int probeProgress(void *userData, curl_off_t, curl_off_t, curl_off_t, curl_off_t
 
 } // namespace
 
+// FTP has no headers, so ask the server for the size and date without fetching the file.
+static ProbeResult probeFtp(const QUrl &url, const NetworkOptions &options, const std::atomic_bool *cancel)
+{
+    ProbeResult result;
+    CurlEasy curl;
+    if (!curl.isValid()) {
+        result.error = { ErrorKind::Permanent, QStringLiteral("Could not initialise libcurl."), 0, -1 };
+        return result;
+    }
+    ProbeContext context;
+    context.cancel = cancel;
+    curl.configure(url, options);
+    curl_easy_setopt(curl.handle(), CURLOPT_NOBODY, 1L);
+    curl_easy_setopt(curl.handle(), CURLOPT_FILETIME, 1L);
+    curl_easy_setopt(curl.handle(), CURLOPT_NOPROGRESS, 0L);
+    curl_easy_setopt(curl.handle(), CURLOPT_XFERINFOFUNCTION, &probeProgress);
+    curl_easy_setopt(curl.handle(), CURLOPT_XFERINFODATA, &context);
+    curl_easy_setopt(curl.handle(), CURLOPT_TIMEOUT, 60L);
+
+    const CURLcode code = curl_easy_perform(curl.handle());
+    if (code != CURLE_OK) {
+        result.error = errorFromCurl(code, curl.errorBuffer());
+        return result;
+    }
+    curl_off_t size = -1;
+    curl_off_t modified = -1;
+    curl_easy_getinfo(curl.handle(), CURLINFO_CONTENT_LENGTH_DOWNLOAD_T, &size);
+    curl_easy_getinfo(curl.handle(), CURLINFO_FILETIME_T, &modified);
+    result.totalSize = size >= 0 ? static_cast<qint64>(size) : -1;
+    result.rangeSupported = true; // REST is near universal; a refusal is handled when resuming
+    if (modified >= 0)
+        result.lastModified = QString::number(static_cast<qint64>(modified));
+    result.effectiveUrl = url.toString();
+    result.suggestedName = fileNameFromUrl(url);
+    result.ok = true;
+    return result;
+}
+
 ProbeResult probeUrl(const QUrl &url, const NetworkOptions &options, const std::atomic_bool *cancel)
 {
+    if (isFtpUrl(url))
+        return probeFtp(url, options, cancel);
+
     ProbeResult result;
     CurlEasy curl;
     if (!curl.isValid()) {

@@ -10,7 +10,7 @@ export P=<n>
 
 | # | Step | What to show |
 |---|---|---|
-| 1 | Launch `./build/linux-release/src/haul` | Dashboard empty state, sidebar, dark theme |
+| 1 | Launch `./build/linux-release/src/haul` | Empty Downloads list, side list, dark theme |
 | 2 | **Add download** → paste `http://127.0.0.1:$P/file/300000000?rate=3000000&name=demo-video.mp4` | Live check: size 286 MB, "Resume / multi-connection: Supported", name taken from the server |
 | 3 | **Start now** | Progress bar, speed card and graph, time left |
 | 4 | Pause, then Resume (or select the row and press Space) | Progress continues from the same byte, not from 0 |

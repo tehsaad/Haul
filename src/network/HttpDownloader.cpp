@@ -22,6 +22,7 @@ struct SingleContext {
     bool decided = false;
     bool restarted = false;
     bool discardPartial = false;
+    bool ftp = false;
     TransferError failure;
 };
 
@@ -29,6 +30,10 @@ struct SingleContext {
 bool decideResponse(SingleContext &ctx)
 {
     ctx.decided = true;
+    if (ctx.ftp) { // no status line or Content-Range: the probe already gave us the size
+        ctx.total = ctx.expectedTotal;
+        return true;
+    }
     const ResponseHeaders &headers = *ctx.headers;
 
     if (ctx.resumeFrom > 0 && headers.status == 416) {
@@ -173,10 +178,13 @@ TransferResult downloadSingle(const SingleRequest &request, const std::atomic_bo
     ctx.onProgress = &onProgress;
     ctx.resumeFrom = resumeFrom;
     ctx.expectedTotal = request.expectedTotal;
+    ctx.ftp = isFtpUrl(request.url);
     ctx.reportTimer.start();
 
     curl.configure(request.url, request.options);
-    if (resumeFrom > 0) {
+    if (ctx.ftp) {
+        curl_easy_setopt(curl.handle(), CURLOPT_RESUME_FROM_LARGE, static_cast<curl_off_t>(resumeFrom));
+    } else if (resumeFrom > 0) {
         curl.addHeader("Range: bytes=" + QByteArray::number(resumeFrom) + "-");
         // Strong ETags are the most reliable validator; weak ones are not allowed in If-Range.
         if (!request.etag.isEmpty() && !request.etag.startsWith(QLatin1String("W/")))
@@ -204,6 +212,9 @@ TransferResult downloadSingle(const SingleRequest &request, const std::atomic_bo
 
     if (ctx.failure.isError()) {
         result.error = ctx.failure;
+    } else if (ctx.ftp && (code == CURLE_FTP_COULDNT_USE_REST || code == CURLE_BAD_DOWNLOAD_RESUME)) {
+        result.error = { ErrorKind::Transient, QStringLiteral("The FTP server cannot resume; the download will restart."), 0, -1 };
+        result.discardPartial = true;
     } else if (code != CURLE_OK) {
         result.error = errorFromCurl(code, curl.errorBuffer());
     } else if (ctx.total >= 0 && result.fileSize != ctx.total) {

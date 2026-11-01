@@ -39,6 +39,7 @@ private:
     QComboBox *m_theme;
     QCheckBox *m_confirmDelete;
     QCheckBox *m_startQueueOnLaunch;
+    QCheckBox *m_browser = nullptr;
     QCheckBox *m_launchAtLogin = nullptr;
     QLabel *m_status;
 };

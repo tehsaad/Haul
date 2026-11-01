@@ -53,7 +53,9 @@ public:
         const QByteArray line = m_process.readLine().trimmed();
         if (!line.startsWith("PORT "))
             return false;
-        m_port = line.mid(5).toInt();
+        const QList<QByteArray> ports = line.split(' ');
+        m_port = ports.value(1).toInt();
+        m_ftpPort = ports.value(2).toInt();
         return m_port > 0;
     }
 
@@ -68,9 +70,15 @@ public:
         return QStringLiteral("http://127.0.0.1:%1%2").arg(m_port).arg(path);
     }
 
+    QString ftpUrl(const QString &path) const
+    {
+        return QStringLiteral("ftp://127.0.0.1:%1%2").arg(m_ftpPort).arg(path);
+    }
+
 private:
     QProcess m_process;
     int m_port = 0;
+    int m_ftpPort = 0;
 };
 
 } // namespace testsupport

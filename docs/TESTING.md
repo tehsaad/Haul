@@ -35,7 +35,7 @@ The network, manager and UI suites start `tests/server/test_server.py` themselve
 
 These were recorded on **2026-10-24** on Ubuntu 26.04 (x86_64, g++ 15.2, Qt 6.10.2, libcurl 8.18.0, SQLite 3.46.1) in a Debug build. Every number below comes from an actual run.
 
-`ctest`: **6/6 test executables passed**.
+`ctest`: **all test executables passed**. Updated 2026-11-01 for Haul 0.2: `tst_network` gained login and FTP cases against a small FTP server in `test_server.py`, and `tst_instance` covers the single-instance guard and runs the real `haul-native-host`.
 
 | Suite | Result | What it covers |
 |---|---|---|
@@ -44,7 +44,8 @@ These were recorded on **2026-10-24** on Ubuntu 26.04 (x86_64, g++ 15.2, Qt 6.10
 | `tst_storage` | 15 passed, 0 failed | migrations, refusing a newer schema, upgrading a real version-1 database, round trip of every field and segment, SQL injection attempt stored literally, persistence across reopen, crash recovery (interrupted → Paused, bytes from disk, never Completed), settings validation, persistence, rejection and fallback for corrupt values |
 | `tst_network` | 33 passed, 0 failed | probe (ranges, no ranges, unknown length, 404, name sanitising, redirects, `file://` redirect refused, cancellation), full download, unknown length, HTTP errors and Retry-After, connection refused, dropped connection, resume with ranges, server ignoring ranges, content changing between attempts, wrong Content-Range rejected, unwritable destination, prompt cancellation (< 3 s), progress callbacks, bandwidth limit, segmented download and assembly, segmented resume, segmented fallback, segmented wrong ranges, incomplete segments refused, worker checksum verify and mismatch, existing file never overwritten, worker restart when the remote file changed |
 | `tst_manager` | 21 passed, 0 failed | add → complete → persisted, invalid and duplicate rejection, unique names, pause/resume (single and 4-segment), cancel deletes partial data, invalid operations rejected, transient retries, bounded retries, permanent errors not retried, concurrency limit never exceeded (max active observed = 1 with limit 1), queue waits until started, stop-queue re-queues, priority and ordering, graceful restart restores and resumes, crash recovery and resume, remove with file, remove while downloading, bandwidth limit from settings |
-| `tst_ui` | 11 passed, 0 failed | empty state on first run, all screens reachable, add dialog rejects `ftp://`, add dialog inspects a real server (size, resume support, Content-Disposition name) and starts the download, dashboard rows equal real tasks, segment panel shown only for segmented downloads, **GUI responsiveness**, no overlapping statistics cards at the minimum window size, light/dark theme switch |
+| `tst_instance` | see below | only one copy can run, lock freed on exit, commands reach the running copy, bad commands refused, only our extension accepted, browser links always ask first, manifests, real native host forwarding and refusal |
+| `tst_ui` | 11 passed, 0 failed | empty state on first run, all screens reachable, add dialog rejects `ftp://`, add dialog inspects a real server (size, resume support, Content-Disposition name) and starts the download, dashboard rows equal real tasks, segment panel shown only for segmented downloads, **GUI responsiveness**, the list keeps its room at the minimum window size, light/dark theme switch |
 
 (QtTest counts include each suite's `initTestCase` and `cleanupTestCase`, and every data row.)
 
@@ -79,7 +80,7 @@ cmake --preset linux-release && cmake --build --preset linux-release --target be
 
 Run before a release. Results are recorded in the release notes.
 
-1. Launch `haul` and confirm the Dashboard empty state appears.
+1. Launch `haul` and confirm the empty Downloads list appears.
 2. Add a real HTTPS URL. Confirm the size and resume support are detected, then start it.
 3. Pause and resume. Confirm the progress continues and does not restart.
 4. Close Haul during a download, reopen it, and confirm the task shows *Interrupted*. Resume it.

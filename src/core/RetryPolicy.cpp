@@ -19,7 +19,7 @@ QString describeHttpStatus(int status)
 {
     switch (status) {
     case 400: return QStringLiteral("HTTP 400 Bad Request: the server rejected the request.");
-    case 401: return QStringLiteral("HTTP 401 Unauthorized: this file requires signing in.");
+    case 401: return QStringLiteral("HTTP 401 Unauthorized: this file needs a login. Right-click it and choose Log in.");
     case 403: return QStringLiteral("HTTP 403 Forbidden: the server refused access to this file.");
     case 404: return QStringLiteral("HTTP 404 Not Found: the file does not exist at this address.");
     case 410: return QStringLiteral("HTTP 410 Gone: the file has been removed.");

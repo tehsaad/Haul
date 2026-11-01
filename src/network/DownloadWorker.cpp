@@ -100,7 +100,7 @@ void DownloadWorker::run()
     // 4. Choose single or segmented mode. An existing single-connection partial file is
     //    continued as it is; existing segment files are continued with their original plan.
     const qint64 partSize = QFileInfo(task.partPath()).size();
-    bool segmented = task.acceptRanges && task.totalBytes > 0;
+    bool segmented = task.acceptRanges && task.totalBytes > 0 && !isFtpUrl(QUrl(task.url));
     if (segmented && task.segments.isEmpty()) {
         const int count = segmentCountFor(task.totalBytes, m_maxConnections);
         segmented = count > 1 && partSize == 0;

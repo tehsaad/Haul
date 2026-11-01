@@ -19,8 +19,12 @@ haul_add_test(tst_queue)
 haul_add_test(tst_storage)
 haul_add_test(tst_network)
 haul_add_test(tst_manager)
+haul_add_test(tst_instance)
 
 if(TARGET haul_ui)
     haul_add_test(tst_ui)
     target_link_libraries(tst_ui PRIVATE haul_ui)
 endif()
+
+add_dependencies(tst_instance haul-native-host)
+target_compile_definitions(tst_instance PRIVATE HAUL_NATIVE_HOST="$<TARGET_FILE:haul-native-host>")

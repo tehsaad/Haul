@@ -1,6 +1,7 @@
 // Haul entry point: sets up storage, the download engine, the scheduler and the window.
 
 #include "app/DownloadManager.h"
+#include "app/InstanceGuard.h"
 #include "platform/Platform.h"
 #include "scheduler/Scheduler.h"
 #include "storage/Database.h"
@@ -69,6 +70,23 @@ int main(int argc, char *argv[])
     parser.addOption(delayOption);
     parser.process(app);
 
+    // Only one copy may use the database. A second copy passes its request on and leaves.
+    InstanceGuard guard;
+    if (!parser.isSet(screenshotOption) && !guard.tryBecomePrimary()) {
+        QString error;
+        const QStringList urls = parser.values(addOption);
+        for (const QString &url : urls) {
+            IpcCommand add;
+            add.type = IpcCommand::Add;
+            add.url = url;
+            if (!InstanceGuard::send(add, &error))
+                QMessageBox::warning(nullptr, QStringLiteral("Haul"), error);
+        }
+        if (urls.isEmpty() && !InstanceGuard::send(IpcCommand(), &error))
+            QMessageBox::warning(nullptr, QStringLiteral("Haul"), QStringLiteral("Haul is already open, but it isn't responding."));
+        return 0;
+    }
+
     // libcurl must be initialised once, before any thread uses it.
     curl_global_init(CURL_GLOBAL_DEFAULT);
 
@@ -99,7 +117,7 @@ int main(int argc, char *argv[])
             window.show();
 
         qint64 lastAdded = 0;
-        for (const QString &url : parser.values(addOption)) {
+        auto addDirectly = [&](const QString &url) {
             AddRequest request;
             request.url = url;
             request.directory = settings.current().downloadDirectory;
@@ -109,7 +127,18 @@ int main(int argc, char *argv[])
                 window.notify(QStringLiteral("Could not add download"), error, true);
             else
                 lastAdded = id;
-        }
+        };
+        for (const QString &url : parser.values(addOption))
+            addDirectly(url);
+
+        QObject::connect(&guard, &InstanceGuard::commandReceived, &window, [&](const IpcCommand &command) {
+            if (command.type == IpcCommand::Show)
+                window.bringToFront();
+            else if (command.confirm)
+                window.askAboutDownload(command.url, command.fileName);
+            else
+                addDirectly(command.url);
+        });
 
         if (parser.isSet(screenshotOption)) {
             const QString dir = parser.value(screenshotOption);

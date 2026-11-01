@@ -1,0 +1,12 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Haul</title>
+<style>
+  body { font: 13px/1.4 system-ui, sans-serif; width: 250px; margin: 12px; color: #2a2824; background: #fbf9f5; }
+  label { display: flex; gap: 8px; align-items: flex-start; margin-bottom: 8px; }
+  p { margin: 0; color: #746d62; font-size: 12px; }
+  @media (prefers-color-scheme: dark) { body { color: #e8e4dc; background: #242321; } p { color: #9a948a; } }
+</style>
+<label><input type="checkbox" id="capture"><span>Send all downloads to Haul</span></label>
+<p>Right-click any link and choose “Download with Haul” to send just that one. Haul asks before it starts.</p>
+<script src="popup.js"></script>

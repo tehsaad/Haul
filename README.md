@@ -4,7 +4,7 @@
 
 It began as a first-semester Programming Fundamentals project at SEECS, NUST. Its feature set was inspired by the publicly described features of Internet Download Manager and implemented clean-room (see [docs/FEATURE_RESEARCH.md](docs/FEATURE_RESEARCH.md)). Haul is not affiliated with or compatible with IDM.
 
-![Dashboard](docs/screenshots/dashboard.png)
+![Downloads](docs/screenshots/dashboard.png)
 
 | Download details (4 segments) | Queue & scheduler | Settings |
 |---|---|---|
@@ -92,20 +92,24 @@ cmake --preset linux-debug && cmake --build --preset linux-debug && ctest --pres
 
 Six suites cover the engine, storage, queue, network behaviour (ranges, ignored ranges, wrong `Content-Range`, changed files, errors, cancellation, segmentation) and the GUI. On 2026-10-24 all 6 passed locally (136 QtTest results), in Linux CI (Qt 6.4) and in Windows CI (MSVC, Qt 6.8.3). The worst measured GUI stall during an active download was 14 ms. Details, and an honest benchmark of when multiple connections help, are in [docs/TESTING.md](docs/TESTING.md).
 
+## Browser extension
+
+1. In Haul, open **Settings → Browser**, tick **Allow the browser extension** and press **Save**.
+2. Click **Show extension folder**, then load that folder in `chrome://extensions` (Developer mode → Load unpacked) or in Firefox's `about:debugging`.
+3. Right-click a link and choose **Download with Haul**. Haul shows the Add dialog and only starts after you confirm. The popup has an optional switch to send every browser download to Haul.
+
 ## Known limitations
 
-- No browser extension yet. Use `haul --add <url>`. The security design is in [docs/SECURITY.md](docs/SECURITY.md).
-- No authenticated downloads (cookies, HTTP auth) and no FTP.
+- Logins are typed by hand and forgotten when Haul closes. Haul does not read cookies or passwords from your browser, so a download that depends on a browser session needs its cookie pasted in.
+- FTP downloads use one connection. Plain `ftp://` is unencrypted; use `ftps://` when the server offers it.
+- The browser extension isn't in the Chrome or Firefox stores yet. Chromium browsers load it unpacked; release Firefox only keeps unsigned add-ons until it restarts. Snap browsers (the default Firefox on Ubuntu) may block native messaging.
 - The scheduler only runs while Haul is open.
 - One queue. The segmentation is static: segments are not re-split while running.
 - Changing "connections per download" affects downloads when they next start.
 - Segmented assembly needs temporary extra disk space (up to the file size) and an extra copy.
-- Only one Haul window per user at a time is supported: running two instances on the same database is not prevented.
 
 ## Roadmap
 
-1. Browser hand-off over native messaging (opt-in, token-protected).
-2. Single-instance guard, with `--add` forwarding to the running window.
 3. Per-category download folders.
 4. Dynamic re-segmentation of slow segments.
 5. A system tray icon and desktop notifications.

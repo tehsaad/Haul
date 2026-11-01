@@ -295,26 +295,12 @@ void DownloadItemDelegate::paint(QPainter *painter, const QStyleOptionViewItem &
     const auto state = static_cast<TaskState>(index.data(DownloadTableModel::StateRole).toInt());
     const QColor color = Theme::stateColor(state);
     painter->save();
-    painter->setRenderHint(QPainter::Antialiasing);
 
     if (column == DownloadTableModel::Status) {
         const QString text = index.data(Qt::DisplayRole).toString();
-        QFont font = option.font;
-        font.setPointSizeF(font.pointSizeF() * 0.9);
-        font.setWeight(QFont::DemiBold);
-        painter->setFont(font);
-        const int width = QFontMetrics(font).horizontalAdvance(text) + 22;
-        const QRectF pill(option.rect.left() + 8, option.rect.center().y() - 11, width, 22);
-        QColor fill = color;
-        fill.setAlpha(Theme::isDark() ? 40 : 28);
-        QPainterPath path;
-        path.addRoundedRect(pill, 11, 11);
-        painter->fillPath(path, fill);
-        painter->setBrush(color);
-        painter->setPen(Qt::NoPen);
-        painter->drawEllipse(QPointF(pill.left() + 10, pill.center().y()), 3, 3);
+        painter->setFont(option.font);
         painter->setPen(color);
-        painter->drawText(pill.adjusted(16, 0, 0, 0), Qt::AlignVCenter | Qt::AlignLeft, text);
+        painter->drawText(option.rect.adjusted(6, 0, -4, 0), Qt::AlignVCenter | Qt::AlignLeft, text);
     } else {
         const int percent = index.data(DownloadTableModel::PercentRole).toInt();
         const QRect r = option.rect.adjusted(10, 0, -10, 0);
@@ -325,19 +311,19 @@ void DownloadItemDelegate::paint(QPainter *painter, const QStyleOptionViewItem &
         const int labelWidth = QFontMetrics(font).horizontalAdvance(QStringLiteral("100%")) + 6;
         const QRectF track(r.left(), r.center().y() - 3, std::max(10, r.width() - labelWidth), 6);
         QPainterPath trackPath;
-        trackPath.addRoundedRect(track, 3, 3);
+        trackPath.addRect(track);
         painter->fillPath(trackPath, p.track);
 
         if (percent > 0) {
             QPainterPath fillPath;
-            fillPath.addRoundedRect(QRectF(track.left(), track.top(), track.width() * percent / 100.0, track.height()), 3, 3);
+            fillPath.addRect(QRectF(track.left(), track.top(), track.width() * percent / 100.0, track.height()));
             painter->fillPath(fillPath, state == TaskState::Downloading ? p.accent : color);
         } else if (percent < 0 && state == TaskState::Downloading) {
             // Unknown size: show an honest "activity" stripe instead of a fake percentage.
             QColor faded = p.accent;
             faded.setAlpha(120);
             QPainterPath fillPath;
-            fillPath.addRoundedRect(QRectF(track.left(), track.top(), track.width() * 0.25, track.height()), 3, 3);
+            fillPath.addRect(QRectF(track.left(), track.top(), track.width() * 0.25, track.height()));
             painter->fillPath(fillPath, faded);
         }
         painter->setPen(p.textMuted);

@@ -38,6 +38,7 @@ struct AddRequest {
     bool startNow = true;
     Priority priority = Priority::Normal;
     QString expectedSha256; // optional trusted checksum
+    DownloadLogin login;    // optional; kept in memory only
 };
 
 // Owns every DownloadTask and coordinates their life cycle. Lives on the GUI thread;
@@ -61,6 +62,8 @@ public:
     bool cancel(qint64 id);
     bool retry(qint64 id);
     bool remove(qint64 id, bool deleteFile);
+    // Replaces the in-memory login of a download and tries it again if it was stopped.
+    bool logIn(qint64 id, const DownloadLogin &login);
     void pauseAll();
     void resumeAll();
 
@@ -126,6 +129,7 @@ private:
     SettingsRepository *m_settings;
     std::map<qint64, DownloadTask> m_tasks;
     QHash<qint64, ActiveTransfer> m_active;
+    QHash<qint64, DownloadLogin> m_logins;
     QSet<qint64> m_dirtyProgress;
     bool m_queueRunning = false;
     QTimer m_tick;

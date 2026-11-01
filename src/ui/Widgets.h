@@ -36,36 +36,22 @@ private:
     QVector<double> m_values;
 };
 
-// Dashboard statistic: caption, big value, small detail line, optional sparkline.
-class StatCard : public QFrame
-{
-    Q_OBJECT
-public:
-    StatCard(const QString &caption, const QString &iconName, QWidget *parent = nullptr);
-    void setValue(const QString &value, const QString &detail = QString());
-    Sparkline *sparkline();
-
-private:
-    QLabel *m_value;
-    QLabel *m_detail;
-    Sparkline *m_sparkline = nullptr;
-    QVBoxLayout *m_layout;
-};
-
-// Friendly placeholder shown instead of an empty table.
+// Short message shown instead of an empty table.
 class EmptyState : public QWidget
 {
     Q_OBJECT
 public:
-    EmptyState(const QString &iconName, const QString &title, const QString &message,
+    EmptyState(const QString &title, const QString &message,
                QWidget *parent = nullptr);
     QPushButton *addAction(const QString &text, const QString &iconName, const QString &variant);
     void setMessage(const QString &title, const QString &message);
+    void setActionVisible(bool visible);
 
 private:
     QLabel *m_title;
     QLabel *m_message;
     QVBoxLayout *m_layout;
+    QVector<QPushButton *> m_actions;
 };
 
 // Coloured pill showing a download state.

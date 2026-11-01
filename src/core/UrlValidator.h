@@ -11,8 +11,8 @@ struct UrlCheck {
     QUrl url;      // normalized URL when ok
 };
 
-// Accepts only absolute http:// and https:// URLs with a host.
-// Rejects file://, ftp://, javascript:, data:, embedded credentials and malformed input.
+// Accepts only absolute http, https, ftp and ftps URLs with a host.
+// Rejects file://, javascript:, data:, embedded credentials and malformed input.
 UrlCheck validateDownloadUrl(const QString &input);
 
 // Returns the URL without user info, query string or fragment, so it is safe to log.

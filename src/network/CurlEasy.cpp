@@ -116,9 +116,21 @@ TransferError errorFromCurl(CURLcode code, const char *errorBuffer)
         error.kind = ErrorKind::Permanent;
         error.message = QStringLiteral("The server's TLS certificate could not be verified: %1").arg(detail);
         break;
+    case CURLE_LOGIN_DENIED:
+        error.kind = ErrorKind::Permanent;
+        error.message = QStringLiteral("The server rejected the login. Right-click the download and choose Log in.");
+        break;
+    case CURLE_REMOTE_FILE_NOT_FOUND:
+        error.kind = ErrorKind::Permanent;
+        error.message = QStringLiteral("The file does not exist on the server.");
+        break;
+    case CURLE_REMOTE_ACCESS_DENIED:
+        error.kind = ErrorKind::Permanent;
+        error.message = QStringLiteral("The server refused access to this file.");
+        break;
     case CURLE_UNSUPPORTED_PROTOCOL:
         error.kind = ErrorKind::Permanent;
-        error.message = QStringLiteral("Unsupported protocol (only http and https are allowed).");
+        error.message = QStringLiteral("Unsupported protocol (only http, https and ftp are allowed).");
         break;
     case CURLE_URL_MALFORMAT:
         error.kind = ErrorKind::Permanent;
@@ -158,8 +170,8 @@ void CurlEasy::configure(const QUrl &url, const NetworkOptions &options)
     curl_easy_setopt(m_curl, CURLOPT_URL, encodedUrl.constData());
     curl_easy_setopt(m_curl, CURLOPT_ERRORBUFFER, m_errorBuffer);
 
-    // Security: never allow file://, ftp://, etc. — not even through a redirect.
-    curl_easy_setopt(m_curl, CURLOPT_PROTOCOLS_STR, "http,https");
+    // Security: never allow file:// and friends. A web server cannot redirect us to FTP either.
+    curl_easy_setopt(m_curl, CURLOPT_PROTOCOLS_STR, "http,https,ftp,ftps");
     curl_easy_setopt(m_curl, CURLOPT_REDIR_PROTOCOLS_STR, "http,https");
     curl_easy_setopt(m_curl, CURLOPT_FOLLOWLOCATION, 1L);
     curl_easy_setopt(m_curl, CURLOPT_MAXREDIRS, 10L);
@@ -174,6 +186,17 @@ void CurlEasy::configure(const QUrl &url, const NetworkOptions &options)
 
     curl_easy_setopt(m_curl, CURLOPT_HEADERFUNCTION, &CurlEasy::headerCallback);
     curl_easy_setopt(m_curl, CURLOPT_HEADERDATA, &m_response);
+
+    // libcurl does not resend these to a different host after a redirect.
+    if (!options.login.username.isEmpty() || !options.login.password.isEmpty()) {
+        const QByteArray user = options.login.username.toUtf8();
+        const QByteArray password = options.login.password.toUtf8();
+        curl_easy_setopt(m_curl, CURLOPT_USERNAME, user.constData());
+        curl_easy_setopt(m_curl, CURLOPT_PASSWORD, password.constData());
+        curl_easy_setopt(m_curl, CURLOPT_HTTPAUTH, CURLAUTH_ANY);
+    }
+    if (!options.login.cookie.isEmpty())
+        curl_easy_setopt(m_curl, CURLOPT_COOKIE, options.login.cookie.constData());
 
     // We store exactly the bytes the server sends, so ask for an unencoded body.
     addHeader("Accept-Encoding: identity");

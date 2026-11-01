@@ -13,6 +13,7 @@ class QComboBox;
 class QLabel;
 class QLineEdit;
 class QPushButton;
+class QToolButton;
 
 namespace haul {
 class DownloadManager;
@@ -31,9 +32,11 @@ public:
     ~AddDownloadDialog() override;
 
     void setUrl(const QString &url);
+    void setFileName(const QString &name);
     qint64 createdTaskId() const { return m_createdId; }
 
 private:
+    DownloadLogin login() const;
     void onUrlEdited();
     void startInspection();
     void cancelInspection();
@@ -58,6 +61,12 @@ private:
     QLabel *m_conflictHint;
     QLineEdit *m_checksum;
     QComboBox *m_priority;
+    QToolButton *m_loginToggle;
+    QWidget *m_loginBox;
+    QLineEdit *m_username;
+    QLineEdit *m_password;
+    QLineEdit *m_cookie;
+    QLabel *m_loginNote;
     QLabel *m_formError;
     QPushButton *m_queueButton;
     QPushButton *m_startButton;

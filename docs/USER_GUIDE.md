@@ -2,10 +2,10 @@
 
 ## The window
 
-The sidebar on the left is always visible. It contains:
+The list on the left is always visible. It contains:
 
 * **Add download**.
-* Four pages: **Dashboard**, **Queue & scheduler**, **Download details** and **Settings**.
+* Four pages: **Downloads**, **Queue**, **Details** and **Settings**.
 * The **total speed** of all running downloads.
 
 ## Adding a download
@@ -24,7 +24,7 @@ The sidebar on the left is always visible. It contains:
    * paste a **SHA-256 checksum** from a source you trust, such as the project's download page. Haul then verifies the finished file.
 5. Choose **Start now** to begin immediately, or **Add to queue** to wait until the queue is started.
 
-## Dashboard
+## Downloads
 
 * **Cards:**
   * active downloads;
@@ -97,3 +97,15 @@ haul --help
 | Download history | `~/.local/share/Haul/Haul/haul.db` | `%APPDATA%\Haul\Haul\haul.db` |
 | Settings | `~/.config/Haul/Haul.conf` | Registry: `HKCU\Software\Haul\Haul` |
 | Partial downloads | Next to the file: `name.haul-part`, `name.haul-segN` | same |
+
+## Downloads that need a login
+
+Open **Login** in the Add dialog and enter a user name and password, or paste a cookie. If a download fails because it needs a login, right-click it and choose **Log in…**. Haul forgets logins when it closes, so it will ask again after a restart.
+
+## FTP
+
+Paste an `ftp://` or `ftps://` link like any other. FTP downloads can resume, but they always use one connection.
+
+## Browser
+
+See "Browser extension" in the README. Opening Haul while it is already running brings the existing window to the front; `haul --add <url>` adds the link to it.

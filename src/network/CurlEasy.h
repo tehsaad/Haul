@@ -11,10 +11,27 @@
 
 namespace haul {
 
+// Optional login for one download. Held in memory only: never written to the database,
+// settings or logs, so it is forgotten when Haul closes.
+struct DownloadLogin {
+    QString username;
+    QString password;
+    QByteArray cookie; // "name=value; name2=value2", typed by the user
+
+    bool isEmpty() const { return username.isEmpty() && password.isEmpty() && cookie.isEmpty(); }
+};
+
+inline bool isFtpUrl(const QUrl &url)
+{
+    const QString scheme = url.scheme().toLower();
+    return scheme == QLatin1String("ftp") || scheme == QLatin1String("ftps");
+}
+
 struct NetworkOptions {
     int connectTimeoutSeconds = 20;
     int stallTimeoutSeconds = 60; // abort if fewer than 1 byte/s arrives for this long
-    QByteArray userAgent = "Haul/0.1 (+https://github.com/tehsaad/Haul)";
+    QByteArray userAgent = "Haul/0.2 (+https://github.com/tehsaad/Haul)";
+    DownloadLogin login;
 };
 
 // Headers of the final response. Redirect responses are discarded as they arrive.
@@ -44,7 +61,7 @@ int parseRetryAfter(const QString &value);
 TransferError errorFromCurl(CURLcode code, const char *errorBuffer);
 
 // RAII owner of one libcurl easy handle with Haul's safety defaults applied:
-// only http/https (also for redirects), TLS verification on, bounded redirects and timeouts.
+// only http, https and ftp (redirects may only go to http or https), TLS verification on, bounded redirects and timeouts.
 class CurlEasy
 {
 public:

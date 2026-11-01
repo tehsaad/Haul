@@ -117,58 +117,13 @@ void Sparkline::paintEvent(QPaintEvent *)
 
 // ------------------------------------------------------------------ StatCard
 
-StatCard::StatCard(const QString &caption, const QString &iconName, QWidget *parent)
-    : QFrame(parent)
-{
-    setObjectName(QStringLiteral("Card"));
-    setMinimumWidth(120);
-    setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
-    m_layout = new QVBoxLayout(this);
-    m_layout->setContentsMargins(16, 14, 16, 14);
-    m_layout->setSpacing(4);
-
-    auto *header = new QHBoxLayout;
-    auto *icon = new QLabel(this);
-    icon->setPixmap(Theme::icon(iconName, Theme::current().accent).pixmap(16, 16));
-    header->addWidget(icon);
-    header->addWidget(makeLabel(caption.toUpper(), QStringLiteral("caption"), this));
-    header->addStretch();
-    m_layout->addLayout(header);
-
-    m_value = makeLabel(QStringLiteral("0"), QStringLiteral("statValue"), this);
-    m_detail = makeLabel(QString(), QStringLiteral("muted"), this);
-    m_detail->setWordWrap(true);
-    m_layout->addWidget(m_value);
-    m_layout->addWidget(m_detail);
-}
-
-void StatCard::setValue(const QString &value, const QString &detail)
-{
-    m_value->setText(value);
-    m_detail->setText(detail);
-}
-
-Sparkline *StatCard::sparkline()
-{
-    if (!m_sparkline) {
-        m_sparkline = new Sparkline(this);
-        m_layout->addWidget(m_sparkline);
-    }
-    return m_sparkline;
-}
-
-// ------------------------------------------------------------------ EmptyState
-
-EmptyState::EmptyState(const QString &iconName, const QString &title, const QString &message, QWidget *parent)
+EmptyState::EmptyState(const QString &title, const QString &message, QWidget *parent)
     : QWidget(parent)
 {
     m_layout = new QVBoxLayout(this);
     m_layout->setAlignment(Qt::AlignCenter);
-    m_layout->setSpacing(10);
+    m_layout->setSpacing(6);
 
-    auto *icon = new QLabel(this);
-    icon->setPixmap(Theme::icon(iconName, Theme::current().accent).pixmap(44, 44));
-    icon->setAlignment(Qt::AlignCenter);
     m_title = makeLabel(title, QStringLiteral("h2"), this);
     m_title->setAlignment(Qt::AlignCenter);
     m_message = makeLabel(message, QStringLiteral("muted"), this);
@@ -176,7 +131,6 @@ EmptyState::EmptyState(const QString &iconName, const QString &title, const QStr
     m_message->setWordWrap(true);
     m_message->setMaximumWidth(420);
 
-    m_layout->addWidget(icon);
     m_layout->addWidget(m_title);
     m_layout->addWidget(m_message, 0, Qt::AlignHCenter);
 }
@@ -184,8 +138,8 @@ EmptyState::EmptyState(const QString &iconName, const QString &title, const QStr
 QPushButton *EmptyState::addAction(const QString &text, const QString &iconName, const QString &variant)
 {
     auto *button = makeButton(text, iconName, variant, this);
-    m_layout->addSpacing(6);
     m_layout->addWidget(button, 0, Qt::AlignHCenter);
+    m_actions.append(button);
     return button;
 }
 
@@ -193,6 +147,12 @@ void EmptyState::setMessage(const QString &title, const QString &message)
 {
     m_title->setText(title);
     m_message->setText(message);
+}
+
+void EmptyState::setActionVisible(bool visible)
+{
+    for (QPushButton *button : std::as_const(m_actions))
+        button->setVisible(visible);
 }
 
 // ------------------------------------------------------------------ StatusBadge
