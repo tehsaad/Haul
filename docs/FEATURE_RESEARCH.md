@@ -26,7 +26,7 @@ This document lists the user-visible features of Internet Download Manager (IDM)
 | 13 | Categories and history | Downloads are grouped by type, and history is kept. | A category based on the file extension (Video, Audio, Archive, Document, Program, Image, Other). History is kept in SQLite, with search and state filters on the Downloads page. | Categories do not yet have their own folders. | `tst_core::categories` |
 | 14 | File integrity | Verify downloaded files. | Optional SHA-256 from a **trusted** source. The result is shown as *Verified*, *Mismatch* or *Not verified*. A hash computed locally alone is never presented as proof. | MD5 and SHA-1 are deliberately not offered. | `tst_network::workerVerifiesChecksum`, `workerReportsChecksumMismatch` |
 | 15 | Error reporting | Clear messages when something fails. | Every error has plain-language text (for example "HTTP 404 Not Found: the file does not exist at this address"). It appears in notifications, tooltips and the Details page. | — | `tst_network::httpErrorsAreClassified` |
-| 16 | Browser integration | A browser extension hands downloads to the manager. | **Not implemented** (stretch goal). The design and security requirements are in `docs/SECURITY.md`. The command line `haul --add <url>` is the current hand-off. | — | — |
+| 16 | Browser integration | A browser extension hands downloads to the manager. | Extension for Chromium browsers and Firefox using native messaging; links open the Add dialog first. Design in `docs/SECURITY.md`. | Not in the browser stores yet; snap browsers may block native messaging. | `tst_instance` |
 
 Features that IDM describes and that Haul deliberately leaves out:
 
