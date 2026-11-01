@@ -27,3 +27,6 @@ jobs:
 
       - name: Test
         run: ctest --preset linux-debug
+
+      - name: Browser extension in real Chrome
+        run: node tests/browser/e2e.mjs build/linux-debug/src/haul-native-host

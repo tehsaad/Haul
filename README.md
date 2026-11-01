@@ -92,6 +92,20 @@ cmake --preset linux-debug && cmake --build --preset linux-debug && ctest --pres
 
 Six suites cover the engine, storage, queue, network behaviour (ranges, ignored ranges, wrong `Content-Range`, changed files, errors, cancellation, segmentation) and the GUI. On 2026-10-24 all 6 passed locally (136 QtTest results), in Linux CI (Qt 6.4) and in Windows CI (MSVC, Qt 6.8.3). The worst measured GUI stall during an active download was 14 ms. Details, and an honest benchmark of when multiple connections help, are in [docs/TESTING.md](docs/TESTING.md).
 
+## Media detection
+
+The browser extension watches the responses a page actually receives, so it works on extensionless and signed links, redirects and files a player fetches in the background, with no list of supported sites.
+
+| | |
+|---|---|
+| **Video** | MP4, MKV, WebM, MOV, AVI, FLV, TS, M4V, MPEG, MPG, 3GP |
+| **Audio** | MP3, WAV, FLAC, AAC, M4A, OGG, Opus, WMA |
+| **Streams** | HLS (`.m3u8`), MPEG-DASH (`.mpd`) |
+
+A response counts only if its status, type and size make sense: a `.mp4` address that returns a web page is ignored, and pieces of a stream aren't listed as files. A small indicator shows how many files a page has. Clicking it opens the panel, and only then does Haul read the first bytes of each file to confirm its real format, size and resume support. Files whose bytes turn out not to be media disappear from the list.
+
+Estimated values are marked with ≈. Downloads go through the normal manager, so queues, retries, resume and checksums all apply.
+
 ## Video streams
 
 Haul downloads ordinary video files and unencrypted HLS (`.m3u8`) and MPEG-DASH (`.mpd`) streams, from any site that serves them that way. It lists the qualities a stream offers and estimates the size. Pieces download several at a time, failed pieces are retried, and a stopped download resumes without fetching finished pieces again. Paste a manifest address into the Add dialog, or let the browser extension find it.
@@ -104,14 +118,14 @@ Haul stops with a clear message on encrypted streams (DRM, AES-128 or SAMPLE-AES
 
 1. In Haul, open **Settings → Browser**, tick **Allow the browser extension** and press **Save**.
 2. Click **Show extension folder**, then load that folder in `chrome://extensions` (Developer mode → Load unpacked) or in Firefox's `about:debugging`.
-3. That's it. Downloads you start in the browser now open Haul's Add dialog instead, and a small panel appears on pages with a video file or stream, with a quality choice. You can also right-click a link and choose **Download with Haul**. Nothing starts until you confirm in Haul.
+3. That's it. Downloads you start in the browser now open Haul's Add dialog instead, and a small indicator appears on pages with audio or video. Click it to see the list and choose a file or quality. You can also right-click a link and choose **Download with Haul**. Nothing starts until you confirm in Haul.
 
-The extension's popup can turn the takeover or the panel off. Turn the takeover off for a download that needs you to be logged in to the site, since Haul doesn't read your browser's cookies.
+The extension's popup can turn the takeover or the indicator off, and reopen a hidden list.
 
 ## Known limitations
 
 - Logins are typed by hand and forgotten when Haul closes. Haul does not read cookies or passwords from your browser, so a download that depends on a browser session needs its cookie pasted in.
-- Encrypted video, live streams, DASH split into several periods, and YouTube aren't downloaded. Some sites build their streams in ways Haul can't see from the browser, so the panel won't appear on every site.
+- Encrypted video, live streams, DASH split into several periods, and YouTube aren't downloaded. Some sites build their streams in ways Haul can't see from the browser, so the indicator won't appear on every site. Haul identifies itself honestly and doesn't use your browser's cookies, so some servers will refuse it. When that happens, a download you started stays in the browser, and the panel offers **In browser** instead.
 - FTP downloads use one connection. Plain `ftp://` is unencrypted; use `ftps://` when the server offers it.
 - The browser extension isn't in the Chrome or Firefox stores yet. Chromium browsers load it unpacked; release Firefox only keeps unsigned add-ons until it restarts. Snap browsers (the default Firefox on Ubuntu) may block native messaging.
 - The scheduler only runs while Haul is open.

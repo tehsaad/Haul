@@ -193,6 +193,10 @@ QVector<StreamVariant> dashVariants(const DashManifest &manifest, const DashRepr
         variant.width = rep.width;
         variant.height = rep.height;
         variant.bandwidth = rep.bandwidth + (!rep.isMuxed && *bestAudio ? (*bestAudio)->bandwidth : 0);
+        if (!rep.isMuxed) {
+            variant.videoBandwidth = rep.bandwidth;
+            variant.audioBandwidth = *bestAudio ? (*bestAudio)->bandwidth : 0;
+        }
         variant.codecs = rep.codecs;
         variant.separateAudio = !rep.isMuxed && *bestAudio;
         variant.estimatedBytes = manifest.duration > 0 ? static_cast<qint64>(variant.bandwidth * manifest.duration / 8) : -1;
@@ -204,6 +208,7 @@ QVector<StreamVariant> dashVariants(const DashManifest &manifest, const DashRepr
         variant.bandwidth = (*bestAudio)->bandwidth;
         variant.codecs = (*bestAudio)->codecs;
         variant.audioOnly = true;
+        variant.audioBandwidth = variant.bandwidth;
         variant.estimatedBytes = manifest.duration > 0 ? static_cast<qint64>(variant.bandwidth * manifest.duration / 8) : -1;
         variants.append(variant);
     }

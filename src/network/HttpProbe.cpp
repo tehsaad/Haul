@@ -2,21 +2,27 @@
 
 #include "core/FileNameUtils.h"
 
+#include <algorithm>
+
 namespace haul {
 
 namespace {
 
 constexpr size_t kMaxProbeBody = 64 * 1024;
+constexpr int kHeadBytes = 4096;
 
 struct ProbeContext {
     size_t received = 0;
+    QByteArray head;
     bool stoppedOnPurpose = false;
     const std::atomic_bool *cancel = nullptr;
 };
 
-size_t probeWrite(char *, size_t size, size_t count, void *userData)
+size_t probeWrite(char *data, size_t size, size_t count, void *userData)
 {
     auto *context = static_cast<ProbeContext *>(userData);
+    if (context->head.size() < kHeadBytes)
+        context->head.append(data, std::min<qsizetype>(static_cast<qsizetype>(size * count), kHeadBytes - context->head.size()));
     context->received += size * count;
     if (context->received > kMaxProbeBody) {
         // The server ignored our range and is sending the whole file: we have seen enough.
@@ -88,7 +94,7 @@ ProbeResult probeUrl(const QUrl &url, const NetworkOptions &options, const std::
     context.cancel = cancel;
 
     curl.configure(url, options);
-    curl.addHeader("Range: bytes=0-0");
+    curl.addHeader("Range: bytes=0-4095");
     curl.applyHeaders();
     curl_easy_setopt(curl.handle(), CURLOPT_WRITEFUNCTION, &probeWrite);
     curl_easy_setopt(curl.handle(), CURLOPT_WRITEDATA, &context);
@@ -104,6 +110,7 @@ ProbeResult probeUrl(const QUrl &url, const NetworkOptions &options, const std::
     }
 
     const ResponseHeaders &headers = curl.response();
+    result.head = context.head;
     result.httpStatus = headers.status;
     result.effectiveUrl = curl.effectiveUrl();
 

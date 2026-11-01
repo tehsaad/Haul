@@ -206,6 +206,17 @@ private slots:
         answer = ask("/hls/high.m3u8?enc=key");
         QVERIFY(!answer["ok"].toBool());
         QVERIFY(answer["encrypted"].toBool());
+
+        // The same executable also checks ordinary files.
+        QProcess host;
+        host.start(QStringLiteral(HAUL_NATIVE_HOST), { QString::fromLatin1(platform::kFirefoxExtensionId) });
+        host.waitForStarted();
+        host.write(frame("{\"type\":\"verify\",\"url\":\"" + server.url("/m/a.opus").toUtf8() + "\"}"));
+        host.closeWriteChannel();
+        host.waitForFinished(15000);
+        answer = QJsonDocument::fromJson(host.readAllStandardOutput().mid(4)).object();
+        QVERIFY(answer["ok"].toBool());
+        QCOMPARE(answer["format"].toString(), QString("opus"));
     }
 
     void nativeHostRefusesOtherExtensions()
