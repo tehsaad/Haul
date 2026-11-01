@@ -41,6 +41,7 @@ struct StreamVariant {
     qint64 estimatedBytes = -1;
 
     QString label() const; // "1080p", or "128 kbps audio"
+    QString displayName;   // label(), plus the bitrate when several qualities share a label
 };
 
 constexpr int kMaxStreamSegments = 200000;
