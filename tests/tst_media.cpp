@@ -590,7 +590,7 @@ private slots:
         QTemporaryDir dir;
         const WorkerOutcome outcome = runStreamWorker(server.url("/static/hls/index.m3u8"), dir.path(), StreamKind::Hls);
         QVERIFY2(!outcome.error.isError(), qPrintable(outcome.error.message));
-        QCOMPARE(outcome.task.fileName, QString("video.mp4"));
+        QVERIFY2(outcome.task.fileName == QString("video.mp4"), qPrintable(outcome.note));
         QByteArray report;
         QVERIFY(runProcess(ffprobe, { "-v", "error", "-show_entries", "stream=codec_type:format=duration", "-of", "default=nw=1", dir.filePath("video.mp4") }, &report));
         QVERIFY2(report.contains("codec_type=video") && report.contains("codec_type=audio"), report.constData());

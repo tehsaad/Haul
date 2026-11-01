@@ -118,16 +118,17 @@ MergeResult mergeStream(const QVector<StreamTrack> &tracks, const QString &direc
         if (result.extension == QLatin1String("ts") && !ffmpeg.isEmpty()) {
             const QString mp4 = directory + QStringLiteral("/remuxed.mp4");
             QString failure;
-            if (runFfmpeg(ffmpeg, { QStringLiteral("-i"), joined.first(), QStringLiteral("-c"), QStringLiteral("copy"),
-                                    QStringLiteral("-bsf:a"), QStringLiteral("aac_adtstoasc"), QStringLiteral("-y"), mp4 },
-                          cancel, &failure)) {
+            const QStringList input { QStringLiteral("-i"), joined.first(), QStringLiteral("-c"), QStringLiteral("copy") };
+            // The filter is required for AAC in a transport stream but fails on other audio.
+            if (runFfmpeg(ffmpeg, input + QStringList { QStringLiteral("-bsf:a"), QStringLiteral("aac_adtstoasc"), QStringLiteral("-y"), mp4 }, cancel, &failure)
+                || (!cancel.load() && runFfmpeg(ffmpeg, input + QStringList { QStringLiteral("-y"), mp4 }, cancel, &failure))) {
                 result.outputPath = mp4;
                 result.extension = QStringLiteral("mp4");
             } else if (cancel.load()) {
                 result.error = failure;
                 return result;
             } else {
-                result.note = QStringLiteral("Saved as .ts because it could not be converted to .mp4. It still plays in most players.");
+                result.note = QStringLiteral("Saved as .ts because it could not be converted to .mp4 (%1). It still plays in most players.").arg(failure);
             }
         }
         result.ok = true;
