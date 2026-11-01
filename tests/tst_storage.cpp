@@ -11,7 +11,7 @@
 
 #include <sqlite3.h>
 
-using namespace openload;
+using namespace haul;
 
 namespace {
 
@@ -65,7 +65,7 @@ private slots:
 
     void upgradesVersionOneDatabase()
     {
-        // A database exactly as OpenLoad schema version 1 created it, with one row.
+        // A database exactly as Haul schema version 1 created it, with one row.
         QTemporaryDir dir;
         const QString path = dir.filePath("v1.db");
         {

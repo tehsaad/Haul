@@ -2,7 +2,7 @@
 
 #include <cmath>
 
-namespace openload {
+namespace haul {
 
 QString formatBytes(qint64 bytes)
 {
@@ -62,4 +62,4 @@ qint64 estimateRemainingSeconds(qint64 downloaded, qint64 total, double bytesPer
     return static_cast<qint64>(std::ceil(remaining / bytesPerSecond));
 }
 
-} // namespace openload
+} // namespace haul

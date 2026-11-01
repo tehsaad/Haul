@@ -5,7 +5,7 @@
 
 #include <QVector>
 
-namespace openload {
+namespace haul {
 
 // Saves and loads downloads (and their segments) in SQLite.
 // Credentials are never stored: URLs with user info are rejected before they get here.
@@ -30,7 +30,7 @@ private:
     Database &m_db;
 };
 
-// Applies OpenLoad's startup recovery policy to tasks loaded from a previous session:
+// Applies Haul's startup recovery policy to tasks loaded from a previous session:
 //  * "Downloading" tasks were interrupted (crash, power loss): they become Paused and are
 //    flagged so the user sees "Interrupted". They are revalidated before resuming.
 //  * "Queued" tasks keep their place in the queue.
@@ -39,4 +39,4 @@ private:
 // Returns the number of tasks that were interrupted.
 int applyStartupRecovery(QVector<DownloadTask> &tasks);
 
-} // namespace openload
+} // namespace haul

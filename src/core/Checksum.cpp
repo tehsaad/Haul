@@ -3,7 +3,7 @@
 #include <QCryptographicHash>
 #include <QFile>
 
-namespace openload {
+namespace haul {
 
 bool isValidSha256Hex(const QString &text)
 {
@@ -38,4 +38,4 @@ QString sha256OfFile(const QString &path, const std::atomic_bool *cancel)
     return QString::fromLatin1(hash.result().toHex());
 }
 
-} // namespace openload
+} // namespace haul

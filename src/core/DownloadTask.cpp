@@ -4,7 +4,7 @@
 
 #include <QDir>
 
-namespace openload {
+namespace haul {
 
 QString priorityLabel(Priority priority)
 {
@@ -23,17 +23,17 @@ QString DownloadTask::finalPath() const
 
 QString DownloadTask::partPath() const
 {
-    return finalPath() + QStringLiteral(".openload-part");
+    return finalPath() + QStringLiteral(".haul-part");
 }
 
 QString DownloadTask::segmentPath(int index) const
 {
-    return finalPath() + QStringLiteral(".openload-seg%1").arg(index);
+    return finalPath() + QStringLiteral(".haul-seg%1").arg(index);
 }
 
 int DownloadTask::progressPercent() const
 {
-    return openload::progressPercent(downloadedBytes, totalBytes);
+    return haul::progressPercent(downloadedBytes, totalBytes);
 }
 
-} // namespace openload
+} // namespace haul

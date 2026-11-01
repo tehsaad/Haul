@@ -5,13 +5,13 @@
 #include <QObject>
 #include <QTimer>
 
-namespace openload {
+namespace haul {
 
 class DownloadManager;
 class SettingsRepository;
 
 // Checks the schedule every 15 seconds (and whenever settings change) and starts or stops
-// the download queue. It only runs while OpenLoad is open; there is no background service.
+// the download queue. It only runs while Haul is open; there is no background service.
 class Scheduler : public QObject
 {
     Q_OBJECT
@@ -33,4 +33,4 @@ private:
     QTimer m_timer;
 };
 
-} // namespace openload
+} // namespace haul

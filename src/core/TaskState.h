@@ -2,7 +2,7 @@
 
 #include <QString>
 
-namespace openload {
+namespace haul {
 
 // Every download is always in exactly one of these states.
 enum class TaskState {
@@ -28,4 +28,4 @@ QString stateLabel(TaskState state);
 bool isActiveState(TaskState state);
 bool isFinishedState(TaskState state);
 
-} // namespace openload
+} // namespace haul

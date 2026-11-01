@@ -1,6 +1,6 @@
-# Contributing to OpenLoad
+# Contributing to Haul
 
-Thanks for helping. OpenLoad is also a teaching project, so readable code matters as much as clever code.
+Thanks for helping. Haul is also a teaching project, so readable code matters as much as clever code.
 
 ## Workflow
 

@@ -6,14 +6,14 @@
 #include <atomic>
 #include <functional>
 
-namespace openload {
+namespace haul {
 
 // Receives (bytes on disk so far, total size or -1). Called from the transfer thread.
 using ProgressCallback = std::function<void(qint64 downloaded, qint64 total)>;
 
 struct SingleRequest {
     QUrl url;
-    QString filePath;          // the ".openload-part" file
+    QString filePath;          // the ".haul-part" file
     qint64 expectedTotal = -1; // size seen by the probe, -1 if unknown
     QString etag;              // validators used for If-Range when resuming
     QString lastModified;
@@ -43,4 +43,4 @@ TransferResult downloadSingle(const SingleRequest &request, const std::atomic_bo
 // Sleeps for `ms` milliseconds in short steps, returning early if `cancel` becomes true.
 void sleepUnlessCancelled(qint64 ms, const std::atomic_bool &cancel);
 
-} // namespace openload
+} // namespace haul

@@ -6,13 +6,13 @@ class QButtonGroup;
 class QLabel;
 class QStackedWidget;
 
-namespace openload {
+namespace haul {
 class DownloadManager;
 class Scheduler;
 class SettingsRepository;
 }
 
-namespace openload::ui {
+namespace haul::ui {
 
 class DashboardPage;
 class DownloadDetailsPage;
@@ -34,7 +34,10 @@ public:
     void showPage(Page page);
     void showDetails(qint64 taskId);
     // Opens the Add Download dialog, optionally pre-filled. Returns the new task id or 0.
-    qint64 openAddDialog(const QString &url = QString());
+    qint64 openAddDialog(const QString &url = QString(), const QString &fileName = QString());
+    void bringToFront();
+    // A link from outside (the browser): opens the Add dialog; several links wait their turn.
+    void askAboutDownload(const QString &url, const QString &fileName);
     void notify(const QString &title, const QString &message, bool isError);
 
     DashboardPage *dashboardPage() const { return m_dashboard; }
@@ -42,6 +45,8 @@ public:
     QWidget *pageWidget(Page page) const;
 
 private:
+    void showNextPendingLink();
+    QVector<QPair<QString, QString>> m_pendingLinks;
     QWidget *buildSidebar();
     void updateSidebarStats();
     void toggleSelected();
@@ -64,4 +69,4 @@ private:
     QLabel *m_sidebarStatus;
 };
 
-} // namespace openload::ui
+} // namespace haul::ui

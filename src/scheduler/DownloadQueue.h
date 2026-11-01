@@ -5,7 +5,7 @@
 #include <QDateTime>
 #include <QVector>
 
-namespace openload {
+namespace haul {
 
 // The fields of a task that matter for queue decisions.
 struct QueueEntry {
@@ -39,4 +39,4 @@ public:
     static int nextPosition(const QVector<QueueEntry> &entries);
 };
 
-} // namespace openload
+} // namespace haul

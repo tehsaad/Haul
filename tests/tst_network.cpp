@@ -19,7 +19,7 @@
 #include <thread>
 #include <algorithm>
 
-using namespace openload;
+using namespace haul;
 using namespace testsupport;
 
 namespace {
@@ -52,8 +52,8 @@ class TestNetwork : public QObject
 private slots:
     void initTestCase()
     {
-        qRegisterMetaType<openload::WorkerOutcome>();
-        qRegisterMetaType<QVector<openload::SegmentInfo>>();
+        qRegisterMetaType<haul::WorkerOutcome>();
+        qRegisterMetaType<QVector<haul::SegmentInfo>>();
         curl_global_init(CURL_GLOBAL_DEFAULT);
         QVERIFY2(server.start(), "could not start tests/server/test_server.py");
     }
@@ -241,7 +241,7 @@ private slots:
         QVERIFY(before.etag != after.etag);
 
         // Resuming with the old validator: the server's If-Range check fails, so it sends
-        // the whole new file with 200 and OpenLoad must start over instead of mixing versions.
+        // the whole new file with 200 and Haul must start over instead of mixing versions.
         SingleRequest req = singleRequest(server.url("/mutable/200000"), path);
         req.expectedTotal = 200000;
         req.etag = before.etag;
@@ -327,6 +327,111 @@ private slots:
         const TransferResult r = downloadSingle(req, cancel, nullptr);
         QVERIFY(!r.error.isError());
         QVERIFY2(timer.elapsed() >= 1500, qPrintable(QString("took only %1 ms").arg(timer.elapsed())));
+    }
+
+    // ------------------------------------------------------------ login
+
+    void basicLoginIsSent()
+    {
+        QTemporaryDir dir;
+        std::atomic_bool cancel { false };
+        SingleRequest req = singleRequest(server.url("/auth/5000"), dir.filePath("a"));
+        TransferResult r = downloadSingle(req, cancel, nullptr);
+        QCOMPARE(r.error.httpStatus, 401);
+        QCOMPARE(r.error.kind, ErrorKind::Permanent); // a missing login is never retried
+
+        req.options.login.username = "test";
+        req.options.login.password = "wrong";
+        QCOMPARE(probeUrl(req.url, req.options).error.httpStatus, 401);
+
+        req.options.login.password = "secret";
+        QVERIFY(probeUrl(req.url, req.options).ok);
+        r = downloadSingle(req, cancel, nullptr);
+        QVERIFY2(!r.error.isError(), qPrintable(r.error.message));
+        QCOMPARE(readFile(dir.filePath("a")), expectedContent(5000));
+    }
+
+    void cookieIsSent()
+    {
+        QTemporaryDir dir;
+        std::atomic_bool cancel { false };
+        SingleRequest req = singleRequest(server.url("/cookie/5000"), dir.filePath("a"));
+        QCOMPARE(downloadSingle(req, cancel, nullptr).error.httpStatus, 403);
+        req.options.login.cookie = "session=abc";
+        const TransferResult r = downloadSingle(req, cancel, nullptr);
+        QVERIFY2(!r.error.isError(), qPrintable(r.error.message));
+        QCOMPARE(readFile(dir.filePath("a")), expectedContent(5000));
+    }
+
+    // ------------------------------------------------------------ FTP
+
+    void ftpProbeAndDownload()
+    {
+        const QUrl url(server.ftpUrl("/file/300000"));
+        const ProbeResult probe = probeUrl(url, NetworkOptions());
+        QVERIFY2(probe.ok, qPrintable(probe.error.message));
+        QCOMPARE(probe.totalSize, qint64(300000));
+        QCOMPARE(probe.suggestedName, QString("300000"));
+
+        QTemporaryDir dir;
+        std::atomic_bool cancel { false };
+        SingleRequest req = singleRequest(url.toString(), dir.filePath("a"));
+        req.expectedTotal = probe.totalSize;
+        const TransferResult r = downloadSingle(req, cancel, nullptr);
+        QVERIFY2(!r.error.isError(), qPrintable(r.error.message));
+        QCOMPARE(readFile(dir.filePath("a")), expectedContent(300000));
+    }
+
+    void ftpResume()
+    {
+        QTemporaryDir dir;
+        const QString path = dir.filePath("a");
+        const QByteArray full = expectedContent(200000);
+        writeFile(path, full.left(70000));
+        SingleRequest req = singleRequest(server.ftpUrl("/file/200000"), path);
+        req.expectedTotal = 200000;
+        std::atomic_bool cancel { false };
+        const TransferResult r = downloadSingle(req, cancel, nullptr);
+        QVERIFY2(!r.error.isError(), qPrintable(r.error.message));
+        QCOMPARE(readFile(path), full);
+    }
+
+    void ftpLoginAndMissingFile()
+    {
+        NetworkOptions options;
+        options.login.username = "test";
+        options.login.password = "wrong";
+        ProbeResult probe = probeUrl(QUrl(server.ftpUrl("/file/10")), options);
+        QVERIFY(!probe.ok);
+        QCOMPARE(probe.error.kind, ErrorKind::Permanent);
+
+        options.login.password = "secret";
+        QVERIFY(probeUrl(QUrl(server.ftpUrl("/file/10")), options).ok);
+
+        QTemporaryDir dir;
+        std::atomic_bool cancel { false };
+        const TransferResult r = downloadSingle(singleRequest(server.ftpUrl("/nope"), dir.filePath("a")), cancel, nullptr);
+        QCOMPARE(r.error.kind, ErrorKind::Permanent);
+    }
+
+    void workerUsesOneConnectionForFtp()
+    {
+        QTemporaryDir dir;
+        const qint64 size = 3 * 1024 * 1024;
+        DownloadTask task;
+        task.id = 9;
+        task.url = server.ftpUrl(QString("/file/%1").arg(size));
+        task.directory = dir.path();
+        task.fileName = "f.bin";
+        auto control = std::make_shared<TransferControl>();
+        DownloadWorker worker(task, 8, NetworkOptions(), control);
+        QSignalSpy finished(&worker, &DownloadWorker::finished);
+        QSignalSpy meta(&worker, &DownloadWorker::metadataReady);
+        worker.run();
+        const WorkerOutcome outcome = finished.first().first().value<WorkerOutcome>();
+        QVERIFY2(!outcome.error.isError(), qPrintable(outcome.error.message));
+        QCOMPARE(meta.first().at(4).toInt(), 1);
+        QCOMPARE(readFile(dir.filePath("f.bin")), expectedContent(size));
     }
 
     // ------------------------------------------------------------ segmented
@@ -439,7 +544,7 @@ private slots:
         QVERIFY2(!outcome.error.isError(), qPrintable(outcome.error.message));
         QCOMPARE(outcome.task.checksumStatus, ChecksumStatus::Verified);
         QVERIFY(QFile::exists(dir.filePath("data.bin")));
-        QVERIFY(!QFile::exists(dir.filePath("data.bin.openload-part")));
+        QVERIFY(!QFile::exists(dir.filePath("data.bin.haul-part")));
     }
 
     void workerReportsChecksumMismatch()

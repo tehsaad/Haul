@@ -19,7 +19,7 @@
 
 #include <algorithm>
 
-namespace openload::ui {
+namespace haul::ui {
 
 namespace {
 
@@ -51,8 +51,8 @@ DownloadDetailsPage::DownloadDetailsPage(DownloadManager *manager, TaskActions *
     m_stack = new QStackedWidget(this);
     outer->addWidget(m_stack);
 
-    auto *empty = new EmptyState(QStringLiteral("details"), QStringLiteral("No download selected"),
-                                 QStringLiteral("Double-click a download on the Dashboard or Queue page, or choose "
+    auto *empty = new EmptyState(QStringLiteral("No download selected"),
+                                 QStringLiteral("Double-click a download in Downloads or Queue, or choose "
                                                 "“Details” from its context menu."),
                                  this);
     m_stack->addWidget(empty);
@@ -65,14 +65,14 @@ DownloadDetailsPage::DownloadDetailsPage(DownloadManager *manager, TaskActions *
     m_stack->addWidget(scroll);
 
     auto *root = new QVBoxLayout(content);
-    root->setContentsMargins(28, 24, 28, 24);
+    root->setContentsMargins(14, 12, 14, 12);
     root->setSpacing(16);
 
     // Header
     auto *header = new QHBoxLayout;
     auto *titles = new QVBoxLayout;
     titles->setSpacing(4);
-    titles->addWidget(makeLabel(QStringLiteral("DOWNLOAD DETAILS"), QStringLiteral("caption"), content));
+    titles->addWidget(makeLabel(QStringLiteral("Details"), QStringLiteral("caption"), content));
     m_name = makeLabel(QString(), QStringLiteral("title"), content);
     m_name->setWordWrap(true);
     m_name->setTextInteractionFlags(Qt::TextSelectableByMouse);
@@ -85,7 +85,7 @@ DownloadDetailsPage::DownloadDetailsPage(DownloadManager *manager, TaskActions *
     // Progress card
     auto *progressCard = makeCard(content);
     auto *progressLayout = new QVBoxLayout(progressCard);
-    progressLayout->setContentsMargins(18, 16, 18, 16);
+    progressLayout->setContentsMargins(12, 10, 12, 10);
     progressLayout->setSpacing(10);
     m_progress = new QProgressBar(progressCard);
     m_progress->setRange(0, 1000);
@@ -113,7 +113,7 @@ DownloadDetailsPage::DownloadDetailsPage(DownloadManager *manager, TaskActions *
     // Error card (only visible when there is something to say)
     auto *errorCard = makeCard(content);
     auto *errorLayout = new QHBoxLayout(errorCard);
-    errorLayout->setContentsMargins(18, 14, 18, 14);
+    errorLayout->setContentsMargins(12, 10, 12, 10);
     auto *errorIcon = new QLabel(errorCard);
     errorIcon->setPixmap(Theme::icon(QStringLiteral("alert"), Theme::current().warning).pixmap(20, 20));
     errorIcon->setAlignment(Qt::AlignTop);
@@ -292,4 +292,4 @@ void DownloadDetailsPage::refresh()
     m_cancel->setEnabled(!isFinishedState(s));
 }
 
-} // namespace openload::ui
+} // namespace haul::ui

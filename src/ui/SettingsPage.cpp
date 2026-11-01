@@ -2,9 +2,12 @@
 
 #include "Theme.h"
 #include "Widgets.h"
+#include "platform/BrowserIntegration.h"
 #include "platform/Platform.h"
 
 #include <QCheckBox>
+#include <QDesktopServices>
+#include <QUrl>
 #include <QComboBox>
 #include <QDir>
 #include <QFileDialog>
@@ -16,7 +19,7 @@
 #include <QSpinBox>
 #include <QVBoxLayout>
 
-namespace openload::ui {
+namespace haul::ui {
 
 namespace {
 
@@ -24,7 +27,7 @@ QGridLayout *addSection(QVBoxLayout *root, const QString &title, const QString &
 {
     auto *card = makeCard(parent);
     auto *layout = new QVBoxLayout(card);
-    layout->setContentsMargins(18, 16, 18, 16);
+    layout->setContentsMargins(12, 10, 12, 10);
     layout->setSpacing(4);
     layout->addWidget(makeLabel(title, QStringLiteral("h2"), card));
     if (!subtitle.isEmpty())
@@ -34,7 +37,7 @@ QGridLayout *addSection(QVBoxLayout *root, const QString &title, const QString &
     grid->setHorizontalSpacing(16);
     grid->setVerticalSpacing(10);
     grid->setColumnStretch(0, 1);
-    grid->setColumnMinimumWidth(1, 400); // controls start at the same x position in every card
+    grid->setColumnMinimumWidth(1, 320); // controls start at the same x position in every card
     layout->addLayout(grid);
     root->addWidget(card);
     return grid;
@@ -66,10 +69,9 @@ SettingsPage::SettingsPage(SettingsRepository *settings, QWidget *parent)
     outer->addWidget(scroll);
 
     auto *root = new QVBoxLayout(content);
-    root->setContentsMargins(28, 24, 28, 24);
+    root->setContentsMargins(14, 12, 14, 12);
     root->setSpacing(14);
     root->addWidget(makeLabel(QStringLiteral("Settings"), QStringLiteral("title"), content));
-    root->addWidget(makeLabel(QStringLiteral("Changes take effect when you press Save."), QStringLiteral("subtitle"), content));
 
     // Downloads
     QGridLayout *g = addSection(root, QStringLiteral("Downloads"), QString(), content);
@@ -104,8 +106,7 @@ SettingsPage::SettingsPage(SettingsRepository *settings, QWidget *parent)
 
     // Retries
     g = addSection(root, QStringLiteral("Automatic retry"),
-                   QStringLiteral("Only temporary problems (timeouts, dropped connections, busy servers) are retried. "
-                                  "Errors such as 404 Not Found or a full disk are never retried."),
+                   QStringLiteral("Only temporary problems are retried, never things like 404 or a full disk."),
                    content);
     m_autoRetry = new QCheckBox(QStringLiteral("Retry failed downloads automatically"), content);
     g->addWidget(m_autoRetry, 0, 0, 1, 2);
@@ -125,19 +126,37 @@ SettingsPage::SettingsPage(SettingsRepository *settings, QWidget *parent)
     g->addWidget(m_theme, 0, 1, Qt::AlignLeft);
     m_confirmDelete = new QCheckBox(QStringLiteral("Ask before removing a download"), content);
     g->addWidget(m_confirmDelete, 1, 0, 1, 2);
-    m_startQueueOnLaunch = new QCheckBox(QStringLiteral("Start the download queue when OpenLoad opens"), content);
+    m_startQueueOnLaunch = new QCheckBox(QStringLiteral("Start the download queue when Haul opens"), content);
     g->addWidget(m_startQueueOnLaunch, 2, 0, 1, 2);
     if (platform::autostartSupported()) {
-        m_launchAtLogin = new QCheckBox(QStringLiteral("Launch OpenLoad when I sign in"), content);
+        m_launchAtLogin = new QCheckBox(QStringLiteral("Launch Haul when I sign in"), content);
         g->addWidget(m_launchAtLogin, 3, 0, 1, 2);
     }
+
+    // Browser
+    g = addSection(root, QStringLiteral("Browser"),
+                   QStringLiteral("Lets Haul's extension send links here. Haul asks before starting them."), content);
+    m_browser = new QCheckBox(QStringLiteral("Allow the browser extension"), content);
+    g->addWidget(m_browser, 0, 0, 1, 2);
+    auto *openExtension = makeButton(QStringLiteral("Show extension folder"), QString(), QString(), content);
+    openExtension->setToolTip(QStringLiteral("Load this folder from chrome://extensions (Developer mode → Load unpacked), or from about:debugging in Firefox."));
+    g->addWidget(openExtension, 1, 0, Qt::AlignLeft);
+    connect(openExtension, &QPushButton::clicked, this, [this] {
+        const QString dir = platform::browserExtensionDirectory();
+        if (dir.isEmpty()) {
+            m_status->setText(QStringLiteral("The extension folder could not be found."));
+            setRole(m_status, QStringLiteral("warning"));
+        } else {
+            QDesktopServices::openUrl(QUrl::fromLocalFile(dir));
+        }
+    });
 
     // Actions
     auto *actions = new QHBoxLayout;
     m_status = makeLabel(QString(), QStringLiteral("muted"), content);
     m_status->setWordWrap(true);
-    auto *defaults = makeButton(QStringLiteral("Restore defaults"), QStringLiteral("retry"), QStringLiteral("ghost"), content);
-    auto *save = makeButton(QStringLiteral("Save settings"), QStringLiteral("check"), QStringLiteral("primary"), content);
+    auto *defaults = makeButton(QStringLiteral("Restore defaults"), QString(), QStringLiteral("ghost"), content);
+    auto *save = makeButton(QStringLiteral("Save"), QString(), QStringLiteral("primary"), content);
     actions->addWidget(m_status, 1);
     actions->addWidget(defaults);
     actions->addWidget(save);
@@ -175,6 +194,7 @@ void SettingsPage::load(const AppSettings &s)
     m_startQueueOnLaunch->setChecked(s.startQueueOnLaunch);
     if (m_launchAtLogin)
         m_launchAtLogin->setChecked(platform::isAutostartEnabled());
+    m_browser->setChecked(platform::isBrowserIntegrationEnabled());
 }
 
 AppSettings SettingsPage::collect() const
@@ -210,7 +230,15 @@ void SettingsPage::save()
         setRole(m_status, QStringLiteral("warning"));
         return;
     }
-    m_status->setText(QStringLiteral("Settings saved."));
+    QString browserError;
+    if (platform::isBrowserIntegrationEnabled() != m_browser->isChecked()
+        && !platform::setBrowserIntegrationEnabled(m_browser->isChecked(), &browserError)) {
+        m_browser->setChecked(platform::isBrowserIntegrationEnabled());
+        m_status->setText(browserError);
+        setRole(m_status, QStringLiteral("warning"));
+        return;
+    }
+    m_status->setText(QStringLiteral("Saved."));
     setRole(m_status, QStringLiteral("success"));
 }
 
@@ -221,4 +249,4 @@ void SettingsPage::restoreDefaults()
     setRole(m_status, QStringLiteral("muted"));
 }
 
-} // namespace openload::ui
+} // namespace haul::ui

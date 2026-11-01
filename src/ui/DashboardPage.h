@@ -3,21 +3,22 @@
 #include <QWidget>
 
 class QComboBox;
+class QLabel;
 class QLineEdit;
 class QListWidget;
 class QStackedWidget;
 class QTableView;
 
-namespace openload {
+namespace haul {
 class DownloadManager;
 }
 
-namespace openload::ui {
+namespace haul::ui {
 
 class DownloadFilterModel;
 class DownloadTableModel;
 class EmptyState;
-class StatCard;
+class Sparkline;
 class TaskActions;
 
 // Overview: live statistics, the main download table with search and filters, and recent activity.
@@ -44,13 +45,9 @@ private:
     DownloadTableModel *m_model;
     DownloadFilterModel *m_filter;
     TaskActions *m_actions;
-
-    StatCard *m_activeCard;
-    StatCard *m_speedCard;
-    StatCard *m_completedCard;
-    StatCard *m_failedCard;
-    StatCard *m_dataCard;
     QLineEdit *m_search;
+    QLabel *m_summary;
+    Sparkline *m_speedGraph;
     QComboBox *m_group;
     QStackedWidget *m_tableStack;
     QTableView *m_table;
@@ -60,4 +57,4 @@ private:
     bool m_recentDirty = true;
 };
 
-} // namespace openload::ui
+} // namespace haul::ui

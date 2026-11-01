@@ -4,7 +4,7 @@
 #include <QFileInfo>
 #include <QStandardPaths>
 
-namespace openload {
+namespace haul {
 
 bool operator==(const AppSettings &a, const AppSettings &b)
 {
@@ -157,4 +157,4 @@ void SettingsRepository::setScheduleState(const ScheduleState &state)
     m_store->sync();
 }
 
-} // namespace openload
+} // namespace haul

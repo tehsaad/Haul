@@ -29,7 +29,7 @@
 
 #include <algorithm>
 
-using namespace openload;
+using namespace haul;
 using namespace testsupport;
 
 namespace {
@@ -100,7 +100,7 @@ private slots:
     void emptyStateOnFirstRun()
     {
         QWidget *dashboard = window->pageWidget(ui::MainWindow::Dashboard);
-        QVERIFY(hasVisibleLabelContaining(dashboard, QStringLiteral("No downloads yet")));
+        QVERIFY(hasVisibleLabelContaining(dashboard, QStringLiteral("Nothing here yet")));
     }
 
     void allScreensAreReachable()
@@ -119,11 +119,11 @@ private slots:
     void addDialogRejectsBadUrls()
     {
         ui::AddDownloadDialog dialog(manager.get(), settings.get(), window.get());
-        dialog.setUrl(QStringLiteral("ftp://example.com/file"));
+        dialog.setUrl(QStringLiteral("gopher://example.com/file"));
         QPushButton *start = buttonWithText(&dialog, QStringLiteral("Start now"));
         QVERIFY(start);
         QVERIFY(!start->isEnabled());
-        QVERIFY(hasVisibleLabelContaining(&dialog, QStringLiteral("Only http:// and https://")));
+        QVERIFY(hasVisibleLabelContaining(&dialog, QStringLiteral("Only http, https and ftp")));
     }
 
     void addDialogInspectsServer()
@@ -131,7 +131,7 @@ private slots:
         ui::AddDownloadDialog dialog(manager.get(), settings.get(), window.get());
         dialog.setUrl(server.url(QStringLiteral("/file/123456?name=report%20final.pdf")));
         // Wait for the debounce and the background probe.
-        QTRY_VERIFY_WITH_TIMEOUT(hasVisibleLabelContaining(&dialog, QStringLiteral("HTTP 206")), 10000);
+        QTRY_VERIFY_WITH_TIMEOUT(hasVisibleLabelContaining(&dialog, QStringLiteral("Looks good")), 10000);
         QVERIFY(hasVisibleLabelContaining(&dialog, QStringLiteral("120.6 KB")));
         QVERIFY(hasVisibleLabelContaining(&dialog, QStringLiteral("Supported")));
 
@@ -209,14 +209,10 @@ private slots:
         window->showPage(ui::MainWindow::Dashboard);
         window->resize(window->minimumSize());
         QTest::qWait(100);
-        const QList<ui::StatCard *> cards = window->dashboardPage()->findChildren<ui::StatCard *>();
-        QCOMPARE(cards.size(), 5);
-        for (int i = 0; i < cards.size(); ++i) {
-            QVERIFY(cards[i]->width() >= cards[i]->minimumWidth());
-            for (int j = i + 1; j < cards.size(); ++j)
-                QVERIFY2(!cards[i]->geometry().intersects(cards[j]->geometry()), "statistics cards overlap");
-        }
-        window->resize(1320, 820);
+        QTableView *table = window->dashboardPage()->findChild<QTableView *>();
+        QVERIFY(table->isVisible() || table->parentWidget()->isVisible());
+        QVERIFY(table->parentWidget()->height() >= 150); // the list keeps its room at the smallest size
+        window->resize(1120, 680);
     }
 
     void lightThemeApplies()

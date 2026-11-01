@@ -7,7 +7,7 @@
 #include <atomic>
 #include <functional>
 
-namespace openload {
+namespace haul {
 
 using SegmentProgressCallback = std::function<void(const QVector<SegmentInfo> &segments)>;
 using SegmentPathFunction = std::function<QString(int index)>;
@@ -42,4 +42,4 @@ bool assembleSegments(const QVector<SegmentInfo> &segments, const SegmentPathFun
                       const QString &outputPath, qint64 totalBytes, const std::atomic_bool &cancel,
                       QString *error);
 
-} // namespace openload
+} // namespace haul

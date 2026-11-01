@@ -25,7 +25,7 @@
 
 #include <algorithm>
 
-namespace openload::ui {
+namespace haul::ui {
 
 QueuePage::QueuePage(DownloadManager *manager, SettingsRepository *settings, Scheduler *scheduler,
                      DownloadTableModel *model, TaskActions *actions, QWidget *parent)
@@ -37,14 +37,14 @@ QueuePage::QueuePage(DownloadManager *manager, SettingsRepository *settings, Sch
 {
     setObjectName(QStringLiteral("Page"));
     auto *root = new QVBoxLayout(this);
-    root->setContentsMargins(28, 24, 28, 24);
+    root->setContentsMargins(14, 12, 14, 12);
     root->setSpacing(16);
 
     // Header with queue status
     auto *header = new QHBoxLayout;
     auto *titles = new QVBoxLayout;
     titles->setSpacing(2);
-    titles->addWidget(makeLabel(QStringLiteral("Queue & scheduler"), QStringLiteral("title"), this));
+    titles->addWidget(makeLabel(QStringLiteral("Queue"), QStringLiteral("title"), this));
     m_queueStatus = makeLabel(QString(), QStringLiteral("subtitle"), this);
     titles->addWidget(m_queueStatus);
     header->addLayout(titles, 1);
@@ -101,7 +101,7 @@ QueuePage::QueuePage(DownloadManager *manager, SettingsRepository *settings, Sch
     h->setSectionHidden(DownloadTableModel::Eta, true);
     h->setSectionHidden(DownloadTableModel::Category, true);
     h->setSectionHidden(DownloadTableModel::Added, true);
-    m_empty = new EmptyState(QStringLiteral("queue"), QString(), QString(), listCard);
+    m_empty = new EmptyState(QString(), QString(), listCard);
     m_listStack = new QStackedWidget(listCard);
     m_listStack->addWidget(m_table);
     m_listStack->addWidget(m_empty);
@@ -130,7 +130,7 @@ QueuePage::QueuePage(DownloadManager *manager, SettingsRepository *settings, Sch
     auto *limitsCard = makeCard(this);
     limitsCard->setFixedWidth(320);
     auto *limits = new QGridLayout(limitsCard);
-    limits->setContentsMargins(16, 14, 16, 14);
+    limits->setContentsMargins(12, 10, 12, 10);
     limits->setVerticalSpacing(10);
     limits->addWidget(makeLabel(QStringLiteral("Limits"), QStringLiteral("h2"), limitsCard), 0, 0, 1, 2);
     limits->addWidget(makeLabel(QStringLiteral("Simultaneous downloads"), QString(), limitsCard), 1, 0);
@@ -171,8 +171,8 @@ QueuePage::QueuePage(DownloadManager *manager, SettingsRepository *settings, Sch
     m_scheduleSummary = makeLabel(QString(), QStringLiteral("value"), scheduleCard);
     m_scheduleSummary->setWordWrap(true);
     schedule->addWidget(m_scheduleSummary, 5, 0, 1, 2);
-    auto *note = makeLabel(QStringLiteral("Uses this computer's local time. The schedule only runs while OpenLoad is open "
-                                          "(there is no background service). If OpenLoad opens after the start time but "
+    auto *note = makeLabel(QStringLiteral("Uses this computer's local time. The schedule only runs while Haul is open "
+                                          "(there is no background service). If Haul opens after the start time but "
                                           "before the stop time, the queue starts right away; if the window has already "
                                           "ended, it waits for the next day."),
                            QStringLiteral("muted"), scheduleCard);
@@ -340,4 +340,4 @@ void QueuePage::saveSchedule()
     m_scheduleSummary->setText(m_scheduler->describe());
 }
 
-} // namespace openload::ui
+} // namespace haul::ui
