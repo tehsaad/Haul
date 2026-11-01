@@ -62,6 +62,8 @@ These were recorded on **2026-10-24** on Ubuntu 26.04 (x86_64, g++ 15.2, Qt 6.10
 
 `realHlsBecomesPlayableMp4` and `realDashMergesAudioAndVideo` generate real media with FFmpeg and check the result with `ffprobe`. They skip when FFmpeg isn't installed, so they only run where it is (CI installs it). No speed measurements have been made for streams.
 
+On 2026-11-01 the parser was also pointed at public test streams published for this purpose (Apple bipbop, Mux test stream, two Akamai DASH samples), and listed qualities and sizes for all four. One full download from the Mux HLS stream, at its lowest quality, produced a valid 22 MB MPEG-TS file in about 60 s without FFmpeg. Downloads from real DASH streams and real FFmpeg merging of downloaded public streams have not been run; merging is tested in CI against generated media.
+
 ## Browser extension in real Chrome
 
 `tests/browser/e2e.mjs` loads the unpacked extension into Chrome with a temporary profile, using the real `haul-native-host` and a stand-in for Haul's socket. It needs Node and Chrome. Run on 2026-11-01 with Chrome 156: extension id matches the host, panel appears by itself on a page with a video, its button reaches Haul with `confirm: true`, a browser download is taken over, and only the site's origin is sent. All 12 checks passed, including a stream fetched with `fetch()` the way hls.js does, quality selection, child playlists not listed twice, and an encrypted stream being named with nothing to press.
