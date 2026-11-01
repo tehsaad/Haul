@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Deterministic HTTP server for OpenLoad's network tests (Python standard library only).
+"""Deterministic HTTP server for Haul's network tests (Python standard library only).
 
 Starts on 127.0.0.1 with a random free port and prints "PORT <n>" on the first line.
 
@@ -58,7 +58,7 @@ def content(seed, start, end):
 
 class Handler(BaseHTTPRequestHandler):
     protocol_version = "HTTP/1.1"
-    server_version = "OpenLoadTestServer/1.0"
+    server_version = "HaulTestServer/1.0"
 
     def log_message(self, fmt, *args):  # keep test output quiet
         pass

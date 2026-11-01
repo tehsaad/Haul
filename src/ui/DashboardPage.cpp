@@ -20,7 +20,7 @@
 
 #include <algorithm>
 
-namespace openload::ui {
+namespace haul::ui {
 
 namespace {
 constexpr int kSpeedHistoryLength = 60; // one sample per second
@@ -42,7 +42,7 @@ DashboardPage::DashboardPage(DownloadManager *manager, DownloadTableModel *model
     auto *titles = new QVBoxLayout;
     titles->setSpacing(2);
     titles->addWidget(makeLabel(QStringLiteral("Dashboard"), QStringLiteral("title"), this));
-    auto *subtitle = makeLabel(QStringLiteral("Everything OpenLoad is downloading, waiting for and has finished."),
+    auto *subtitle = makeLabel(QStringLiteral("Everything Haul is downloading, waiting for and has finished."),
                                QStringLiteral("subtitle"), this);
     subtitle->setWordWrap(true);
     titles->addWidget(subtitle);
@@ -135,7 +135,7 @@ DashboardPage::DashboardPage(DownloadManager *manager, DownloadTableModel *model
     m_table->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
 
     m_empty = new EmptyState(QStringLiteral("download"), QStringLiteral("No downloads yet"),
-                             QStringLiteral("Add a link to start. OpenLoad resumes interrupted downloads, uses several "
+                             QStringLiteral("Add a link to start. Haul resumes interrupted downloads, uses several "
                                             "connections when the server allows it, and keeps your history."),
                              tableCard);
     auto *emptyAdd = m_empty->addAction(QStringLiteral("Add your first download"), QStringLiteral("plus"), QStringLiteral("primary"));
@@ -281,7 +281,7 @@ void DashboardPage::updateEmptyState()
     const bool noMatches = !noTasks && m_filter->rowCount() == 0;
     if (noTasks) {
         m_empty->setMessage(QStringLiteral("No downloads yet"),
-                            QStringLiteral("Add a link to start. OpenLoad resumes interrupted downloads, uses several "
+                            QStringLiteral("Add a link to start. Haul resumes interrupted downloads, uses several "
                                            "connections when the server allows it, and keeps your history."));
     } else if (noMatches) {
         m_empty->setMessage(QStringLiteral("Nothing matches"), QStringLiteral("Try a different search or filter."));
@@ -289,4 +289,4 @@ void DashboardPage::updateEmptyState()
     m_tableStack->setCurrentWidget(noTasks || noMatches ? static_cast<QWidget *>(m_empty) : m_table);
 }
 
-} // namespace openload::ui
+} // namespace haul::ui

@@ -1,4 +1,4 @@
-# OpenLoad User Guide
+# Haul User Guide
 
 ## The window
 
@@ -11,17 +11,17 @@ The sidebar on the left is always visible. It contains:
 ## Adding a download
 
 1. Click **Add download** or press **Ctrl+N**. If the clipboard holds a link, the dialog fills it in for you.
-2. Paste an `http://` or `https://` link. OpenLoad checks it with the server and shows:
+2. Paste an `http://` or `https://` link. Haul checks it with the server and shows:
    * the **size**, or "Unknown" if the server does not say;
    * whether the download can be **resumed** and use several connections;
    * the **file type**;
    * a suggested **file name**.
 
    Press **Cancel check** to stop the check. You can still add the download afterwards.
-3. Choose the **folder** and, optionally, change the **file name**. If a file with that name already exists, OpenLoad tells you which new name it will use. It never overwrites an existing file.
+3. Choose the **folder** and, optionally, change the **file name**. If a file with that name already exists, Haul tells you which new name it will use. It never overwrites an existing file.
 4. Optionally:
    * choose a **priority**;
-   * paste a **SHA-256 checksum** from a source you trust, such as the project's download page. OpenLoad then verifies the finished file.
+   * paste a **SHA-256 checksum** from a source you trust, such as the project's download page. Haul then verifies the finished file.
 5. Choose **Start now** to begin immediately, or **Add to queue** to wait until the queue is started.
 
 ## Dashboard
@@ -39,7 +39,7 @@ The sidebar on the left is always visible. It contains:
   * **Delete** removes it from the list.
 * **Pause all / Resume all** act on every download.
 
-"Time left" appears only when OpenLoad knows the size and has measured a speed. Otherwise it shows "—". When the size is unknown, the progress bar shows activity instead of a made-up percentage.
+"Time left" appears only when Haul knows the size and has measured a speed. Otherwise it shows "—". When the size is unknown, the progress bar shows activity instead of a made-up percentage.
 
 ## Download details
 
@@ -54,15 +54,15 @@ For multi-connection downloads, a **Segments** panel shows the progress of each 
 * **Priority** and **Move up / Move down** change the start order of waiting downloads. Higher priority starts first, and equal priorities start in the order they were added.
 * **Limits:** simultaneous downloads (1–10) and connections per download (1–16).
 * **Schedule:** a daily start time and an optional stop time. The schedule uses your computer's local time.
-  * **The schedule only works while OpenLoad is open.**
-  * If you open OpenLoad after the start time but before the stop time, the queue starts right away.
+  * **The schedule only works while Haul is open.**
+  * If you open Haul after the start time but before the stop time, the queue starts right away.
   * If the window has already ended, the queue waits until the next day.
 
 ## Settings
 
 | Setting | Effect |
 |---|---|
-| Default download folder | Pre-filled in the Add dialog, and used by `openload --add`. |
+| Default download folder | Pre-filled in the Add dialog, and used by `haul --add`. |
 | When adding a download | Which button is the default: Start now or Add to queue. |
 | Maximum simultaneous downloads | How many downloads run at once. |
 | Maximum connections per download | Used when a download starts, if the server supports byte ranges and the file is at least 2 MiB. |
@@ -70,30 +70,30 @@ For multi-connection downloads, a **Segments** panel shows the progress of each 
 | Automatic retry, attempts, delay | Retries temporary failures only. The delay doubles after each attempt. |
 | Theme | Dark or Light. Applies immediately. |
 | Ask before removing a download | Confirmation dialog, with an option to also delete the file. |
-| Start the download queue when OpenLoad opens | Starts queued downloads automatically at launch. |
-| Launch OpenLoad when I sign in | Linux and Windows only. |
+| Start the download queue when Haul opens | Starts queued downloads automatically at launch. |
+| Launch Haul when I sign in | Linux and Windows only. |
 
 **Restore defaults** loads the default values. Press **Save** to keep them.
 
 ## Pausing, closing and crashes
 
 * **Pausing** keeps the downloaded data.
-* **Resuming** checks with the server whether the file changed. If it changed, or if the server cannot resume, the download restarts from the beginning, and OpenLoad tells you.
-* **Closing OpenLoad** pauses running downloads. They show as *Interrupted* the next time.
+* **Resuming** checks with the server whether the file changed. If it changed, or if the server cannot resume, the download restarts from the beginning, and Haul tells you.
+* **Closing Haul** pauses running downloads. They show as *Interrupted* the next time.
 * **After a crash or power cut**, the same happens. The progress is read from the partial files on disk.
 
 ## Command line
 
 ```
-openload --add <url>     # add (and start) a download into the default folder; repeatable
-openload --minimized     # start minimized
-openload --help
+haul --add <url>     # add (and start) a download into the default folder; repeatable
+haul --minimized     # start minimized
+haul --help
 ```
 
-## Where OpenLoad keeps data
+## Where Haul keeps data
 
 | | Linux | Windows |
 |---|---|---|
-| Download history | `~/.local/share/OpenLoad/OpenLoad/openload.db` | `%APPDATA%\OpenLoad\OpenLoad\openload.db` |
-| Settings | `~/.config/OpenLoad/OpenLoad.conf` | Registry: `HKCU\Software\OpenLoad\OpenLoad` |
-| Partial downloads | Next to the file: `name.openload-part`, `name.openload-segN` | same |
+| Download history | `~/.local/share/Haul/Haul/haul.db` | `%APPDATA%\Haul\Haul\haul.db` |
+| Settings | `~/.config/Haul/Haul.conf` | Registry: `HKCU\Software\Haul\Haul` |
+| Partial downloads | Next to the file: `name.haul-part`, `name.haul-segN` | same |

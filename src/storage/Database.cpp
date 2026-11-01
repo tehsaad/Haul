@@ -5,7 +5,7 @@
 
 #include <sqlite3.h>
 
-namespace openload {
+namespace haul {
 
 namespace {
 
@@ -183,7 +183,7 @@ bool Database::migrate()
 
     int version = schemaVersion();
     if (version > kMigrationCount) {
-        m_lastError = QStringLiteral("The database was created by a newer version of OpenLoad.");
+        m_lastError = QStringLiteral("The database was created by a newer version of Haul.");
         return false;
     }
 
@@ -211,4 +211,4 @@ qint64 Database::lastInsertId() const
     return sqlite3_last_insert_rowid(m_db);
 }
 
-} // namespace openload
+} // namespace haul

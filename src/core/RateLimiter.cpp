@@ -1,6 +1,6 @@
 #include "RateLimiter.h"
 
-namespace openload {
+namespace haul {
 
 qint64 RateLimiter::consume(qint64 bytes)
 {
@@ -25,4 +25,4 @@ qint64 RateLimiter::consume(qint64 bytes)
     return allowedMs > elapsedMs ? allowedMs - elapsedMs : 0;
 }
 
-} // namespace openload
+} // namespace haul

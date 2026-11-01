@@ -2,7 +2,7 @@
 
 #include <algorithm>
 
-namespace openload {
+namespace haul {
 
 ErrorKind classifyHttpStatus(int status)
 {
@@ -51,4 +51,4 @@ int RetryPolicy::delayForAttempt(int attempt, int retryAfterSeconds) const
     return static_cast<int>(std::max<long long>(delay, 1));
 }
 
-} // namespace openload
+} // namespace haul

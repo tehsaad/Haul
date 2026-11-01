@@ -5,7 +5,7 @@
 #include <QRegularExpression>
 #include <QTimeZone>
 
-namespace openload {
+namespace haul {
 
 void ResponseHeaders::clear()
 {
@@ -221,4 +221,4 @@ size_t CurlEasy::headerCallback(char *buffer, size_t size, size_t count, void *u
     return total;
 }
 
-} // namespace openload
+} // namespace haul

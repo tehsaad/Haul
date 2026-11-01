@@ -16,7 +16,7 @@
 #include <QTemporaryDir>
 #include <QTest>
 
-using namespace openload;
+using namespace haul;
 
 class TestCore : public QObject
 {
@@ -125,7 +125,7 @@ private slots:
         QTest::newRow("empty") << "" << "download";
         QTest::newRow("device name") << "CON.txt" << "_CON.txt";
         QTest::newRow("control chars") << QString("a\x01" "b\n.bin") << "ab.bin";
-        QTest::newRow("our suffix") << "x.openload-part" << "x_openload-part";
+        QTest::newRow("our suffix") << "x.haul-part" << "x_haul-part";
     }
 
     void sanitizeFileNames()
@@ -281,8 +281,8 @@ private slots:
         t.directory = "/tmp/x";
         t.fileName = "a.bin";
         QCOMPARE(t.finalPath(), QString("/tmp/x/a.bin"));
-        QCOMPARE(t.partPath(), QString("/tmp/x/a.bin.openload-part"));
-        QCOMPARE(t.segmentPath(2), QString("/tmp/x/a.bin.openload-seg2"));
+        QCOMPARE(t.partPath(), QString("/tmp/x/a.bin.haul-part"));
+        QCOMPARE(t.segmentPath(2), QString("/tmp/x/a.bin.haul-seg2"));
         t.totalBytes = -1;
         QCOMPARE(t.progressPercent(), -1);
     }

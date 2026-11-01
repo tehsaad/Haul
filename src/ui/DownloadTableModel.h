@@ -7,11 +7,11 @@
 #include <QStyledItemDelegate>
 #include <QVector>
 
-namespace openload {
+namespace haul {
 class DownloadManager;
 }
 
-namespace openload::ui {
+namespace haul::ui {
 
 // Exposes the DownloadManager's tasks as rows. Every value is read live from the manager;
 // the model stores nothing but the row order of task ids.
@@ -84,4 +84,4 @@ public:
     QSize sizeHint(const QStyleOptionViewItem &option, const QModelIndex &index) const override;
 };
 
-} // namespace openload::ui
+} // namespace haul::ui

@@ -1,6 +1,6 @@
 #include "UrlValidator.h"
 
-namespace openload {
+namespace haul {
 
 namespace {
 constexpr int kMaxUrlLength = 8192;
@@ -67,4 +67,4 @@ QString redactUrl(const QUrl &url)
     return text;
 }
 
-} // namespace openload
+} // namespace haul

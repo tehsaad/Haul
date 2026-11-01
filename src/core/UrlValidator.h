@@ -3,7 +3,7 @@
 #include <QString>
 #include <QUrl>
 
-namespace openload {
+namespace haul {
 
 struct UrlCheck {
     bool ok = false;
@@ -18,4 +18,4 @@ UrlCheck validateDownloadUrl(const QString &input);
 // Returns the URL without user info, query string or fragment, so it is safe to log.
 QString redactUrl(const QUrl &url);
 
-} // namespace openload
+} // namespace haul

@@ -5,7 +5,7 @@
 
 #include <QTest>
 
-using namespace openload;
+using namespace haul;
 
 namespace {
 

@@ -73,16 +73,16 @@ cmake --preset linux-release && cmake --build --preset linux-release --target be
 | 200 MiB, unthrottled loopback | 1 | 0.21 s | 930 MiB/s |
 | | 4 | 0.36 s | 556 MiB/s |
 
-**Interpretation.** Segmentation helps only when something limits each connection, such as per-connection server throttling or long-distance TCP connections. With 8 connections the gain flattens, because the test server and the 1 MiB-per-segment rule become the bottleneck. When the link is not the bottleneck, as on loopback, segmentation is **slower**: OpenLoad assembles segment files with one extra copy at the end. OpenLoad therefore does not claim that more connections are always faster.
+**Interpretation.** Segmentation helps only when something limits each connection, such as per-connection server throttling or long-distance TCP connections. With 8 connections the gain flattens, because the test server and the 1 MiB-per-segment rule become the bottleneck. When the link is not the bottleneck, as on loopback, segmentation is **slower**: Haul assembles segment files with one extra copy at the end. Haul therefore does not claim that more connections are always faster.
 
 ## Manual verification checklist
 
 Run before a release. Results are recorded in the release notes.
 
-1. Launch `openload` and confirm the Dashboard empty state appears.
+1. Launch `haul` and confirm the Dashboard empty state appears.
 2. Add a real HTTPS URL. Confirm the size and resume support are detected, then start it.
 3. Pause and resume. Confirm the progress continues and does not restart.
-4. Close OpenLoad during a download, reopen it, and confirm the task shows *Interrupted*. Resume it.
+4. Close Haul during a download, reopen it, and confirm the task shows *Interrupted*. Resume it.
 5. Add two downloads with "Add to queue", then use Start queue and Stop queue.
 6. Download a file with a known published SHA-256 and confirm the status is *Verified*.
 7. Switch the theme in Settings and confirm the change applies immediately.
@@ -91,8 +91,8 @@ Run before a release. Results are recorded in the release notes.
 
 | Workflow | Runner | What it does | Verified run (2026-10-24) |
 |---|---|---|---|
-| `linux.yml` on `feature/shared-core` | ubuntu-24.04 (Qt 6.4.2) | build + `ctest` | [success](https://github.com/tehsaad/OpenLoad/actions/runs/40079460088): 6/6 suites |
-| `linux.yml` on `feature/linux-desktop` | ubuntu-24.04 | build + `ctest` + `.deb` + artifact | [success](https://github.com/tehsaad/OpenLoad/actions/runs/40079884556) |
-| `windows.yml` on `feature/windows-desktop` | windows-2022, MSVC 2022, Qt 6.8.3, vcpkg curl/sqlite3 | build + `ctest` + NSIS installer + silent install → launch installed app → silent uninstall | [success](https://github.com/tehsaad/OpenLoad/actions/runs/40080104328): 6/6 suites, `OpenLoad-0.1.0-Setup.exe` (38.1 MB) |
+| `linux.yml` on `feature/shared-core` | ubuntu-24.04 (Qt 6.4.2) | build + `ctest` | [success](https://github.com/tehsaad/Haul/actions/runs/40079460088): 6/6 suites |
+| `linux.yml` on `feature/linux-desktop` | ubuntu-24.04 | build + `ctest` + `.deb` + artifact | [success](https://github.com/tehsaad/Haul/actions/runs/40079884556) |
+| `windows.yml` on `feature/windows-desktop` | windows-2022, MSVC 2022, Qt 6.8.3, vcpkg curl/sqlite3 | build + `ctest` + NSIS installer + silent install → launch installed app → silent uninstall | [success](https://github.com/tehsaad/Haul/actions/runs/40080104328): 6/6 suites, `Haul-0.1.0-Setup.exe` (38.1 MB) |
 
 These CI runs used the code before the minimum-size layout fix. Later runs are listed on the repository's Actions page.

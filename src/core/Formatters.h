@@ -3,7 +3,7 @@
 #include <QString>
 #include <QtGlobal>
 
-namespace openload {
+namespace haul {
 
 // "0 B", "1.5 KB", "12.3 MB" ... (1 KB = 1024 bytes). Negative input means "unknown".
 QString formatBytes(qint64 bytes);
@@ -21,4 +21,4 @@ int progressPercent(qint64 downloaded, qint64 total);
 // (unknown size, no measurable speed, or nothing left).
 qint64 estimateRemainingSeconds(qint64 downloaded, qint64 total, double bytesPerSecond);
 
-} // namespace openload
+} // namespace haul

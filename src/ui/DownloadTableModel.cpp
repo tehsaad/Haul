@@ -15,7 +15,7 @@
 #include <algorithm>
 #include <limits>
 
-namespace openload::ui {
+namespace haul::ui {
 
 DownloadTableModel::DownloadTableModel(DownloadManager *manager, QObject *parent)
     : QAbstractTableModel(parent)
@@ -346,4 +346,4 @@ void DownloadItemDelegate::paint(QPainter *painter, const QStyleOptionViewItem &
     painter->restore();
 }
 
-} // namespace openload::ui
+} // namespace haul::ui

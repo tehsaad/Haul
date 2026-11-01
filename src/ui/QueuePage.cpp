@@ -25,7 +25,7 @@
 
 #include <algorithm>
 
-namespace openload::ui {
+namespace haul::ui {
 
 QueuePage::QueuePage(DownloadManager *manager, SettingsRepository *settings, Scheduler *scheduler,
                      DownloadTableModel *model, TaskActions *actions, QWidget *parent)
@@ -171,8 +171,8 @@ QueuePage::QueuePage(DownloadManager *manager, SettingsRepository *settings, Sch
     m_scheduleSummary = makeLabel(QString(), QStringLiteral("value"), scheduleCard);
     m_scheduleSummary->setWordWrap(true);
     schedule->addWidget(m_scheduleSummary, 5, 0, 1, 2);
-    auto *note = makeLabel(QStringLiteral("Uses this computer's local time. The schedule only runs while OpenLoad is open "
-                                          "(there is no background service). If OpenLoad opens after the start time but "
+    auto *note = makeLabel(QStringLiteral("Uses this computer's local time. The schedule only runs while Haul is open "
+                                          "(there is no background service). If Haul opens after the start time but "
                                           "before the stop time, the queue starts right away; if the window has already "
                                           "ended, it waits for the next day."),
                            QStringLiteral("muted"), scheduleCard);
@@ -340,4 +340,4 @@ void QueuePage::saveSchedule()
     m_scheduleSummary->setText(m_scheduler->describe());
 }
 
-} // namespace openload::ui
+} // namespace haul::ui

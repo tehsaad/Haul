@@ -7,11 +7,11 @@ class QProgressBar;
 class QPushButton;
 class QStackedWidget;
 
-namespace openload {
+namespace haul {
 class DownloadManager;
 }
 
-namespace openload::ui {
+namespace haul::ui {
 
 class SegmentBar;
 class StatusBadge;
@@ -65,4 +65,4 @@ private:
     QPushButton *m_remove;
 };
 
-} // namespace openload::ui
+} // namespace haul::ui

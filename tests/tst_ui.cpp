@@ -29,7 +29,7 @@
 
 #include <algorithm>
 
-using namespace openload;
+using namespace haul;
 using namespace testsupport;
 
 namespace {

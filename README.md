@@ -1,8 +1,8 @@
-# OpenLoad
+# Haul
 
-**OpenLoad** is an open-source desktop download manager for **Linux and Windows**, written in **C++17** with **Qt 6 Widgets**, **libcurl** and **SQLite**. It resumes interrupted downloads safely, uses several connections when a server allows it, queues and schedules downloads, and keeps a persistent history. It needs no account and no cloud service.
+**Haul** is an open-source desktop download manager for **Linux and Windows**, written in **C++17** with **Qt 6 Widgets**, **libcurl** and **SQLite**. It resumes interrupted downloads safely, uses several connections when a server allows it, queues and schedules downloads, and keeps a persistent history. It needs no account and no cloud service.
 
-It began as a first-semester Programming Fundamentals project at SEECS, NUST. Its feature set was inspired by the publicly described features of Internet Download Manager and implemented clean-room (see [docs/FEATURE_RESEARCH.md](docs/FEATURE_RESEARCH.md)). OpenLoad is not affiliated with or compatible with IDM.
+It began as a first-semester Programming Fundamentals project at SEECS, NUST. Its feature set was inspired by the publicly described features of Internet Download Manager and implemented clean-room (see [docs/FEATURE_RESEARCH.md](docs/FEATURE_RESEARCH.md)). Haul is not affiliated with or compatible with IDM.
 
 ![Dashboard](docs/screenshots/dashboard.png)
 
@@ -16,7 +16,7 @@ It began as a first-semester Programming Fundamentals project at SEECS, NUST. It
 
 - **Real HTTP/HTTPS downloads** with live progress, a smoothed speed, and an ETA shown only when it is meaningful.
 - **Pause and resume** with `Range` and `If-Range`. Every `206` response is checked against the requested `Content-Range`. If the server ignores the range or the file changed, the download restarts cleanly; data is never blindly appended.
-- **Segmented downloads** (up to 16 connections). Each segment goes to its own file, every range is verified, and the file is assembled before the final rename. OpenLoad falls back to one connection automatically when the server ignores ranges.
+- **Segmented downloads** (up to 16 connections). Each segment goes to its own file, every range is verified, and the file is assembled before the final rename. Haul falls back to one connection automatically when the server ignores ranges.
 - **Queue:** priority then FIFO, simultaneous-download limit, Start/Stop queue, Move up/down, duplicate prevention.
 - **Scheduler:** daily start and optional stop time (windows across midnight are supported), with a documented missed-start policy.
 - **Automatic retry:** bounded exponential backoff for transient errors only. `Retry-After` is honoured. 404, 403, TLS and disk errors are never retried.
@@ -40,9 +40,9 @@ It began as a first-semester Programming Fundamentals project at SEECS, NUST. It
 ## Architecture
 
 ```
-openload (main.cpp)
- └─ openload_ui      MainWindow, five screens, Theme, model/delegate, widgets
-     └─ openload_engine
+haul (main.cpp)
+ └─ haul_ui      MainWindow, five screens, Theme, model/delegate, widgets
+     └─ haul_engine
           app/        DownloadManager (life cycle, retries, persistence)
           network/    DownloadWorker (one QThread each), HttpProbe, HttpDownloader, SegmentDownloader
           scheduler/  DownloadQueue, Schedule/Scheduler
@@ -60,10 +60,10 @@ Verified on Ubuntu 26.04 (Qt 6.10, locally) and Ubuntu 24.04 (Qt 6.4, in CI). It
 ```bash
 sudo apt install build-essential cmake ninja-build pkg-config \
                  qt6-base-dev qt6-svg-dev libcurl4-openssl-dev libsqlite3-dev python3
-git clone https://github.com/tehsaad/OpenLoad.git && cd OpenLoad
+git clone https://github.com/tehsaad/Haul.git && cd Haul
 cmake --preset linux-release
 cmake --build --preset linux-release
-./build/linux-release/src/openload
+./build/linux-release/src/haul
 ```
 
 Debian packaging (`.deb`) lives on the `feature/linux-desktop` branch; see `packaging/linux/README.md` there.
@@ -82,7 +82,7 @@ Run this from a "x64 Native Tools" prompt. The installer (NSIS) and the GitHub A
 
 ## Usage
 
-Click **Add download** (Ctrl+N), paste a link, then choose **Start now** or **Add to queue**. See the [User Guide](docs/USER_GUIDE.md). From a terminal: `openload --add <url>`.
+Click **Add download** (Ctrl+N), paste a link, then choose **Start now** or **Add to queue**. See the [User Guide](docs/USER_GUIDE.md). From a terminal: `haul --add <url>`.
 
 ## Testing
 
@@ -94,13 +94,13 @@ Six suites cover the engine, storage, queue, network behaviour (ranges, ignored 
 
 ## Known limitations
 
-- No browser extension yet. Use `openload --add <url>`. The security design is in [docs/SECURITY.md](docs/SECURITY.md).
+- No browser extension yet. Use `haul --add <url>`. The security design is in [docs/SECURITY.md](docs/SECURITY.md).
 - No authenticated downloads (cookies, HTTP auth) and no FTP.
-- The scheduler only runs while OpenLoad is open.
+- The scheduler only runs while Haul is open.
 - One queue. The segmentation is static: segments are not re-split while running.
 - Changing "connections per download" affects downloads when they next start.
 - Segmented assembly needs temporary extra disk space (up to the file size) and an extra copy.
-- Only one OpenLoad window per user at a time is supported: running two instances on the same database is not prevented.
+- Only one Haul window per user at a time is supported: running two instances on the same database is not prevented.
 
 ## Roadmap
 

@@ -23,7 +23,7 @@
 #include <QVBoxLayout>
 #include <QtConcurrent/QtConcurrentRun>
 
-namespace openload::ui {
+namespace haul::ui {
 
 AddDownloadDialog::AddDownloadDialog(DownloadManager *manager, SettingsRepository *settings, QWidget *parent)
     : QDialog(parent)
@@ -39,7 +39,7 @@ AddDownloadDialog::AddDownloadDialog(DownloadManager *manager, SettingsRepositor
     root->setSpacing(14);
 
     root->addWidget(makeLabel(QStringLiteral("Add download"), QStringLiteral("title"), this));
-    root->addWidget(makeLabel(QStringLiteral("Paste an http:// or https:// link. OpenLoad checks it with the server before downloading."),
+    root->addWidget(makeLabel(QStringLiteral("Paste an http:// or https:// link. Haul checks it with the server before downloading."),
                               QStringLiteral("subtitle"), this));
 
     // URL
@@ -248,7 +248,7 @@ void AddDownloadDialog::onInspectionFinished()
         m_probeFailedPermanently = result.error.kind == ErrorKind::Permanent;
         m_inspectStatus->setText(result.error.message
                                  + (m_probeFailedPermanently ? QString()
-                                                             : QStringLiteral(" You can still add it; OpenLoad will retry.")));
+                                                             : QStringLiteral(" You can still add it; Haul will retry.")));
         setRole(m_inspectStatus, m_probeFailedPermanently ? QStringLiteral("error") : QStringLiteral("warning"));
         updateButtons();
         return;
@@ -336,4 +336,4 @@ void AddDownloadDialog::submit(bool startNow)
     accept();
 }
 
-} // namespace openload::ui
+} // namespace haul::ui

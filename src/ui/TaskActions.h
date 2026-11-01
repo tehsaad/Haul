@@ -5,12 +5,12 @@
 class QMenu;
 class QWidget;
 
-namespace openload {
+namespace haul {
 class DownloadManager;
 class SettingsRepository;
 }
 
-namespace openload::ui {
+namespace haul::ui {
 
 // The per-download actions shared by the dashboard, queue and details pages, so the
 // context menu and the buttons always behave the same way.
@@ -38,4 +38,4 @@ private:
     QWidget *m_dialogParent;
 };
 
-} // namespace openload::ui
+} // namespace haul::ui

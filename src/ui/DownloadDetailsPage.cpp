@@ -19,7 +19,7 @@
 
 #include <algorithm>
 
-namespace openload::ui {
+namespace haul::ui {
 
 namespace {
 
@@ -292,4 +292,4 @@ void DownloadDetailsPage::refresh()
     m_cancel->setEnabled(!isFinishedState(s));
 }
 
-} // namespace openload::ui
+} // namespace haul::ui

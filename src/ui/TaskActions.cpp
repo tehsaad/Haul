@@ -16,7 +16,7 @@
 #include <QPushButton>
 #include <QUrl>
 
-namespace openload::ui {
+namespace haul::ui {
 
 TaskActions::TaskActions(DownloadManager *manager, SettingsRepository *settings, QWidget *dialogParent)
     : QObject(dialogParent)
@@ -126,4 +126,4 @@ bool TaskActions::removeWithConfirmation(qint64 id)
     return m_manager->remove(id, deleteFile);
 }
 
-} // namespace openload::ui
+} // namespace haul::ui

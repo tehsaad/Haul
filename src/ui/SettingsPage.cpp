@@ -16,7 +16,7 @@
 #include <QSpinBox>
 #include <QVBoxLayout>
 
-namespace openload::ui {
+namespace haul::ui {
 
 namespace {
 
@@ -125,10 +125,10 @@ SettingsPage::SettingsPage(SettingsRepository *settings, QWidget *parent)
     g->addWidget(m_theme, 0, 1, Qt::AlignLeft);
     m_confirmDelete = new QCheckBox(QStringLiteral("Ask before removing a download"), content);
     g->addWidget(m_confirmDelete, 1, 0, 1, 2);
-    m_startQueueOnLaunch = new QCheckBox(QStringLiteral("Start the download queue when OpenLoad opens"), content);
+    m_startQueueOnLaunch = new QCheckBox(QStringLiteral("Start the download queue when Haul opens"), content);
     g->addWidget(m_startQueueOnLaunch, 2, 0, 1, 2);
     if (platform::autostartSupported()) {
-        m_launchAtLogin = new QCheckBox(QStringLiteral("Launch OpenLoad when I sign in"), content);
+        m_launchAtLogin = new QCheckBox(QStringLiteral("Launch Haul when I sign in"), content);
         g->addWidget(m_launchAtLogin, 3, 0, 1, 2);
     }
 
@@ -221,4 +221,4 @@ void SettingsPage::restoreDefaults()
     setRole(m_status, QStringLiteral("muted"));
 }
 
-} // namespace openload::ui
+} // namespace haul::ui

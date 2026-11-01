@@ -6,13 +6,13 @@ class QButtonGroup;
 class QLabel;
 class QStackedWidget;
 
-namespace openload {
+namespace haul {
 class DownloadManager;
 class Scheduler;
 class SettingsRepository;
 }
 
-namespace openload::ui {
+namespace haul::ui {
 
 class DashboardPage;
 class DownloadDetailsPage;
@@ -64,4 +64,4 @@ private:
     QLabel *m_sidebarStatus;
 };
 
-} // namespace openload::ui
+} // namespace haul::ui

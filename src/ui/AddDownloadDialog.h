@@ -14,12 +14,12 @@ class QLabel;
 class QLineEdit;
 class QPushButton;
 
-namespace openload {
+namespace haul {
 class DownloadManager;
 class SettingsRepository;
 }
 
-namespace openload::ui {
+namespace haul::ui {
 
 // "Add download" dialog: validates the URL, inspects the server's response headers in the
 // background (cancellable), suggests a safe file name and warns about name conflicts.
@@ -71,4 +71,4 @@ private:
     qint64 m_createdId = 0;
 };
 
-} // namespace openload::ui
+} // namespace haul::ui

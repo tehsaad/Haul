@@ -1,19 +1,19 @@
-# OpenLoad Architecture
+# Haul Architecture
 
-OpenLoad is one C++17 code base for Linux and Windows. It is split into two static libraries and a small executable, so the download engine can be tested without a GUI.
+Haul is one C++17 code base for Linux and Windows. It is split into two static libraries and a small executable, so the download engine can be tested without a GUI.
 
 ```
-                        ┌──────────────────────────── openload (executable) ───┐
+                        ┌──────────────────────────── haul (executable) ───┐
                         │ src/app/main.cpp — wires everything together          │
                         └───────────────┬──────────────────────────────────────┘
                                         │
-┌───────────── openload_ui (Qt Widgets) ▼──────────────────────────────────────────┐
+┌───────────── haul_ui (Qt Widgets) ▼──────────────────────────────────────────┐
 │ MainWindow ─ DashboardPage ─ QueuePage ─ DownloadDetailsPage ─ SettingsPage      │
 │ AddDownloadDialog   DownloadTableModel/FilterModel/ItemDelegate   TaskActions    │
 │ Theme (design tokens + stylesheet)   Widgets (StatCard, EmptyState, Toast, ...)  │
 └───────────────┬──────────────────────────────────────────────────────────────────┘
                 │ signals / slots (GUI thread only)
-┌───────────────▼──────────── openload_engine (no widgets) ────────────────────────┐
+┌───────────────▼──────────── haul_engine (no widgets) ────────────────────────┐
 │ app/      DownloadManager  — owns all tasks, life cycle, retries, persistence      │
 │ scheduler/ DownloadQueue (pure ordering logic)   Schedule + Scheduler (daily)      │
 │ network/  DownloadWorker (one per running download, own QThread)                   │
@@ -39,7 +39,7 @@ OpenLoad is one C++17 code base for Linux and Windows. It is split into two stat
 | `HttpProbe` | `GET` with `Range: bytes=0-0`. It learns the size, range support, validators and the suggested name. |
 | `HttpDownloader` | Single-connection transfer with safe resume (`Range` + `If-Range` + `Content-Range` checks). |
 | `SegmentDownloader` | Several ranges in parallel on one libcurl *multi* handle, each written to its own file, then verified and assembled. |
-| `CurlEasy` | RAII wrapper that applies OpenLoad's security defaults to every libcurl handle. |
+| `CurlEasy` | RAII wrapper that applies Haul's security defaults to every libcurl handle. |
 | `Database` / `DownloadRepository` | SQLite with prepared statements, transactions and numbered migrations. |
 | `SettingsRepository` | `QSettings` + validation. It emits `changed` so the engine reacts immediately. |
 | `Theme` | Colour tokens for dark and light themes and the application stylesheet built from them. |
@@ -75,15 +75,15 @@ A transient failure with retries remaining goes back to **Queued**, with a `retr
 3. **Check free disk space** when the size is known.
 4. **Choose a mode.** Segmented mode needs a known size, a confirmed `206` response and at least 2 segments of 1 MiB or more. An existing single-connection partial file is continued as-is. Existing segment files are continued with their saved plan.
 5. **Transfer.** Every `206` must carry exactly the requested `Content-Range`. A `200` reply to a range request means the server ignored the range. Segmented mode then falls back to one connection, and single-connection mode truncates the file and restarts. A partial file is never appended to blindly.
-6. **Assemble** (segmented mode only). Verify each segment's size, concatenate the segments into `name.openload-part`, then verify the total size.
-7. **Finalize.** `rename()` the `.openload-part` file to the final name. If a file with that name appeared in the meantime, choose `name (1).ext`. Nothing is ever overwritten.
+6. **Assemble** (segmented mode only). Verify each segment's size, concatenate the segments into `name.haul-part`, then verify the total size.
+7. **Finalize.** `rename()` the `.haul-part` file to the final name. If a file with that name appeared in the meantime, choose `name (1).ext`. Nothing is ever overwritten.
 8. **Verify** the SHA-256 if the user supplied one. The result is *Verified*, *Mismatch* or *Not checked*.
 
 ## Persistence
 
-* Database: `QStandardPaths::AppDataLocation/openload.db`
-  * Linux: `~/.local/share/OpenLoad/OpenLoad/`
-  * Windows: `%APPDATA%\OpenLoad\OpenLoad\`
+* Database: `QStandardPaths::AppDataLocation/haul.db`
+  * Linux: `~/.local/share/Haul/Haul/`
+  * Windows: `%APPDATA%\Haul\Haul\`
 * Tables: `downloads`, `segments` and `schema_version`.
 * Migrations live in `kMigrations[]` in `src/storage/Database.cpp`. Each one runs in its own transaction. Released migrations are never edited; new ones are appended. Version 2 (`auto_name`) is an example, and `tst_storage::upgradesVersionOneDatabase` checks it.
 * Progress is written about once a second (the `tick()` timer). Full rows are written on every state change.
@@ -91,8 +91,8 @@ A transient failure with retries remaining goes back to **Queued**, with a `retr
   * A row still marked *Downloading* means the previous session ended abruptly. It becomes *Paused* and is flagged *Interrupted*.
   * Byte counts are corrected from the files actually on disk.
   * Nothing is ever promoted to *Completed*.
-  * Nothing starts automatically unless the user enabled "Start the queue when OpenLoad opens".
-* Settings are stored with `QSettings`: `~/.config/OpenLoad/OpenLoad.conf` on Linux and the registry (`HKCU\Software\OpenLoad`) on Windows.
+  * Nothing starts automatically unless the user enabled "Start the queue when Haul opens".
+* Settings are stored with `QSettings`: `~/.config/Haul/Haul.conf` on Linux and the registry (`HKCU\Software\Haul`) on Windows.
 
 ## Platform-specific code
 

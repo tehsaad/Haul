@@ -4,7 +4,7 @@
 #include <QFile>
 #include <QThread>
 
-namespace openload {
+namespace haul {
 
 namespace {
 
@@ -219,4 +219,4 @@ TransferResult downloadSingle(const SingleRequest &request, const std::atomic_bo
     return result;
 }
 
-} // namespace openload
+} // namespace haul

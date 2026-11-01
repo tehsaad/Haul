@@ -3,7 +3,7 @@
 #include <algorithm>
 #include <utility>
 
-namespace openload {
+namespace haul {
 
 QueueEntry queueEntryFor(const DownloadTask &task)
 {
@@ -98,4 +98,4 @@ int DownloadQueue::nextPosition(const QVector<QueueEntry> &entries)
     return highest + 1;
 }
 
-} // namespace openload
+} // namespace haul

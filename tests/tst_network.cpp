@@ -19,7 +19,7 @@
 #include <thread>
 #include <algorithm>
 
-using namespace openload;
+using namespace haul;
 using namespace testsupport;
 
 namespace {
@@ -52,8 +52,8 @@ class TestNetwork : public QObject
 private slots:
     void initTestCase()
     {
-        qRegisterMetaType<openload::WorkerOutcome>();
-        qRegisterMetaType<QVector<openload::SegmentInfo>>();
+        qRegisterMetaType<haul::WorkerOutcome>();
+        qRegisterMetaType<QVector<haul::SegmentInfo>>();
         curl_global_init(CURL_GLOBAL_DEFAULT);
         QVERIFY2(server.start(), "could not start tests/server/test_server.py");
     }
@@ -241,7 +241,7 @@ private slots:
         QVERIFY(before.etag != after.etag);
 
         // Resuming with the old validator: the server's If-Range check fails, so it sends
-        // the whole new file with 200 and OpenLoad must start over instead of mixing versions.
+        // the whole new file with 200 and Haul must start over instead of mixing versions.
         SingleRequest req = singleRequest(server.url("/mutable/200000"), path);
         req.expectedTotal = 200000;
         req.etag = before.etag;
@@ -439,7 +439,7 @@ private slots:
         QVERIFY2(!outcome.error.isError(), qPrintable(outcome.error.message));
         QCOMPARE(outcome.task.checksumStatus, ChecksumStatus::Verified);
         QVERIFY(QFile::exists(dir.filePath("data.bin")));
-        QVERIFY(!QFile::exists(dir.filePath("data.bin.openload-part")));
+        QVERIFY(!QFile::exists(dir.filePath("data.bin.haul-part")));
     }
 
     void workerReportsChecksumMismatch()

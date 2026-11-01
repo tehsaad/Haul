@@ -16,7 +16,7 @@
 
 class QThread;
 
-namespace openload {
+namespace haul {
 
 class DownloadRepository;
 
@@ -94,9 +94,9 @@ signals:
 
 private slots:
     void onMetadata(qint64 taskId, const QString &fileName, qint64 totalBytes, bool acceptRanges, int connections);
-    void onProgress(qint64 taskId, qint64 downloaded, qint64 total, QVector<openload::SegmentInfo> segments);
-    void onFinished(openload::WorkerOutcome outcome);
-    void onSettingsChanged(const openload::AppSettings &settings);
+    void onProgress(qint64 taskId, qint64 downloaded, qint64 total, QVector<haul::SegmentInfo> segments);
+    void onFinished(haul::WorkerOutcome outcome);
+    void onSettingsChanged(const haul::AppSettings &settings);
     void tick();
 
 private:
@@ -131,4 +131,4 @@ private:
     QTimer m_tick;
 };
 
-} // namespace openload
+} // namespace haul

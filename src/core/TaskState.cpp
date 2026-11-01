@@ -1,6 +1,6 @@
 #include "TaskState.h"
 
-namespace openload {
+namespace haul {
 
 bool canTransition(TaskState from, TaskState to)
 {
@@ -83,4 +83,4 @@ bool isFinishedState(TaskState state)
         || state == TaskState::Cancelled;
 }
 
-} // namespace openload
+} // namespace haul

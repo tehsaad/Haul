@@ -13,7 +13,7 @@
 
 #include <algorithm>
 
-namespace openload::ui {
+namespace haul::ui {
 
 void setRole(QWidget *widget, const QString &role)
 {
@@ -332,4 +332,4 @@ void ToastHost::relayout()
     }
 }
 
-} // namespace openload::ui
+} // namespace haul::ui

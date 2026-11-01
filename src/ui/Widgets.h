@@ -1,6 +1,6 @@
 #pragma once
 
-// Small reusable building blocks of the OpenLoad design system.
+// Small reusable building blocks of the Haul design system.
 
 #include "core/DownloadTask.h"
 
@@ -11,7 +11,7 @@
 
 class QVBoxLayout;
 
-namespace openload::ui {
+namespace haul::ui {
 
 // Factory helpers so every page uses the same styles (see Theme::styleSheet).
 QLabel *makeLabel(const QString &text, const QString &role = QString(), QWidget *parent = nullptr);
@@ -111,4 +111,4 @@ private:
     QVector<QFrame *> m_toasts;
 };
 
-} // namespace openload::ui
+} // namespace haul::ui

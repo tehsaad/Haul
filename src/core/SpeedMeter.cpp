@@ -1,6 +1,6 @@
 #include "SpeedMeter.h"
 
-namespace openload {
+namespace haul {
 
 SpeedMeter::SpeedMeter(double smoothing, qint64 minIntervalMs)
     : m_smoothing(smoothing)
@@ -39,4 +39,4 @@ void SpeedMeter::reset()
     m_hasSpeed = false;
 }
 
-} // namespace openload
+} // namespace haul

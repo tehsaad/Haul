@@ -11,7 +11,7 @@
 #include <QFileInfo>
 #include <QStorageInfo>
 
-namespace openload {
+namespace haul {
 
 DownloadWorker::DownloadWorker(const DownloadTask &task, int maxConnections, const NetworkOptions &options,
                                std::shared_ptr<TransferControl> control)
@@ -247,4 +247,4 @@ TransferError DownloadWorker::finalize(DownloadTask &task)
     return {};
 }
 
-} // namespace openload
+} // namespace haul

@@ -9,12 +9,12 @@
 
 #include <curl/curl.h>
 
-namespace openload {
+namespace haul {
 
 struct NetworkOptions {
     int connectTimeoutSeconds = 20;
     int stallTimeoutSeconds = 60; // abort if fewer than 1 byte/s arrives for this long
-    QByteArray userAgent = "OpenLoad/0.1 (+https://github.com/tehsaad/OpenLoad)";
+    QByteArray userAgent = "Haul/0.1 (+https://github.com/tehsaad/Haul)";
 };
 
 // Headers of the final response. Redirect responses are discarded as they arrive.
@@ -43,7 +43,7 @@ int parseRetryAfter(const QString &value);
 // Builds a TransferError from a libcurl result code.
 TransferError errorFromCurl(CURLcode code, const char *errorBuffer);
 
-// RAII owner of one libcurl easy handle with OpenLoad's safety defaults applied:
+// RAII owner of one libcurl easy handle with Haul's safety defaults applied:
 // only http/https (also for redirects), TLS verification on, bounded redirects and timeouts.
 class CurlEasy
 {
@@ -73,4 +73,4 @@ private:
     char m_errorBuffer[CURL_ERROR_SIZE] = {};
 };
 
-} // namespace openload
+} // namespace haul

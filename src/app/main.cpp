@@ -1,4 +1,4 @@
-// OpenLoad entry point: sets up storage, the download engine, the scheduler and the window.
+// Haul entry point: sets up storage, the download engine, the scheduler and the window.
 
 #include "app/DownloadManager.h"
 #include "platform/Platform.h"
@@ -17,7 +17,7 @@
 
 #include <curl/curl.h>
 
-using namespace openload;
+using namespace haul;
 
 namespace {
 
@@ -46,14 +46,14 @@ void captureScreenshots(ui::MainWindow &window, const QString &directory)
 int main(int argc, char *argv[])
 {
     QApplication app(argc, argv);
-    QApplication::setOrganizationName(QStringLiteral("OpenLoad"));
-    QApplication::setApplicationName(QStringLiteral("OpenLoad"));
-    QApplication::setApplicationVersion(QStringLiteral(OPENLOAD_VERSION));
-    QApplication::setWindowIcon(QIcon(QStringLiteral(":/openload.svg")));
-    QApplication::setDesktopFileName(QStringLiteral("openload"));
+    QApplication::setOrganizationName(QStringLiteral("Haul"));
+    QApplication::setApplicationName(QStringLiteral("Haul"));
+    QApplication::setApplicationVersion(QStringLiteral(HAUL_VERSION));
+    QApplication::setWindowIcon(QIcon(QStringLiteral(":/haul.svg")));
+    QApplication::setDesktopFileName(QStringLiteral("haul"));
 
     QCommandLineParser parser;
-    parser.setApplicationDescription(QStringLiteral("OpenLoad — open-source download manager"));
+    parser.setApplicationDescription(QStringLiteral("Haul — open-source download manager"));
     parser.addHelpOption();
     parser.addVersionOption();
     const QCommandLineOption addOption(QStringLiteral("add"), QStringLiteral("Add a download for <url> and start it."), QStringLiteral("url"));
@@ -77,7 +77,7 @@ int main(int argc, char *argv[])
 
     Database database;
     if (!database.open(platform::databasePath()) || !database.migrate()) {
-        QMessageBox::critical(nullptr, QStringLiteral("OpenLoad"),
+        QMessageBox::critical(nullptr, QStringLiteral("Haul"),
                               QStringLiteral("The download database could not be opened:\n%1\n\n%2")
                                   .arg(QDir::toNativeSeparators(platform::databasePath()), database.lastError()));
         curl_global_cleanup();
@@ -90,7 +90,7 @@ int main(int argc, char *argv[])
         DownloadManager manager(&repository, &settings);
         manager.restore();
         Scheduler scheduler(&settings, &manager);
-        scheduler.check(); // handles a start time that passed while OpenLoad was closed
+        scheduler.check(); // handles a start time that passed while Haul was closed
 
         ui::MainWindow window(&manager, &settings, &scheduler);
         if (parser.isSet(minimizedOption))

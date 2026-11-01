@@ -43,8 +43,8 @@ class TestServer
 public:
     bool start()
     {
-        m_process.setProgram(QStringLiteral(OPENLOAD_PYTHON));
-        m_process.setArguments({ QStringLiteral("-I"), QStringLiteral(OPENLOAD_TEST_SERVER) });
+        m_process.setProgram(QStringLiteral(HAUL_PYTHON));
+        m_process.setArguments({ QStringLiteral("-I"), QStringLiteral(HAUL_TEST_SERVER) });
         m_process.start();
         if (!m_process.waitForStarted(5000))
             return false;

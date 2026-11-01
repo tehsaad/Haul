@@ -1,6 +1,6 @@
 #include "Schedule.h"
 
-namespace openload {
+namespace haul {
 
 ScheduleAction evaluateSchedule(const ScheduleConfig &config, const QDateTime &now,
                                 ScheduleState &state, bool queueRunning)
@@ -41,4 +41,4 @@ ScheduleAction evaluateSchedule(const ScheduleConfig &config, const QDateTime &n
     return ScheduleAction::None;
 }
 
-} // namespace openload
+} // namespace haul

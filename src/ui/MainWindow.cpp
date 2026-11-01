@@ -23,7 +23,7 @@
 #include <QToolButton>
 #include <QVBoxLayout>
 
-namespace openload::ui {
+namespace haul::ui {
 
 MainWindow::MainWindow(DownloadManager *manager, SettingsRepository *settings, Scheduler *scheduler, QWidget *parent)
     : QMainWindow(parent)
@@ -31,8 +31,8 @@ MainWindow::MainWindow(DownloadManager *manager, SettingsRepository *settings, S
     , m_settings(settings)
     , m_scheduler(scheduler)
 {
-    setWindowTitle(QStringLiteral("OpenLoad"));
-    setWindowIcon(QIcon(QStringLiteral(":/openload.svg")));
+    setWindowTitle(QStringLiteral("Haul"));
+    setWindowIcon(QIcon(QStringLiteral(":/haul.svg")));
     resize(1320, 820);
     setMinimumSize(1040, 640);
 
@@ -122,10 +122,10 @@ QWidget *MainWindow::buildSidebar()
     auto *brand = new QHBoxLayout;
     brand->setSpacing(10);
     auto *logo = new QLabel(sidebar);
-    logo->setPixmap(QIcon(QStringLiteral(":/openload.svg")).pixmap(34, 34));
+    logo->setPixmap(QIcon(QStringLiteral(":/haul.svg")).pixmap(34, 34));
     auto *names = new QVBoxLayout;
     names->setSpacing(0);
-    auto *name = new QLabel(QStringLiteral("OpenLoad"), sidebar);
+    auto *name = new QLabel(QStringLiteral("Haul"), sidebar);
     name->setObjectName(QStringLiteral("BrandName"));
     auto *tag = new QLabel(QStringLiteral("Download manager"), sidebar);
     tag->setObjectName(QStringLiteral("BrandTag"));
@@ -260,4 +260,4 @@ void MainWindow::removeSelected()
         m_actions->removeWithConfirmation(id);
 }
 
-} // namespace openload::ui
+} // namespace haul::ui

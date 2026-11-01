@@ -16,16 +16,16 @@
 #include <algorithm>
 #include <utility>
 
-namespace openload {
+namespace haul {
 
 DownloadManager::DownloadManager(DownloadRepository *repository, SettingsRepository *settings, QObject *parent)
     : QObject(parent)
     , m_repository(repository)
     , m_settings(settings)
 {
-    qRegisterMetaType<openload::WorkerOutcome>();
-    qRegisterMetaType<openload::SegmentInfo>();
-    qRegisterMetaType<QVector<openload::SegmentInfo>>();
+    qRegisterMetaType<haul::WorkerOutcome>();
+    qRegisterMetaType<haul::SegmentInfo>();
+    qRegisterMetaType<QVector<haul::SegmentInfo>>();
 
     connect(m_settings, &SettingsRepository::changed, this, &DownloadManager::onSettingsChanged);
     connect(&m_tick, &QTimer::timeout, this, &DownloadManager::tick);
@@ -702,11 +702,11 @@ void DownloadManager::shutdown()
             applyStartupRecovery(single); // read the real progress from disk
             t->downloadedBytes = single.first().downloadedBytes;
             t->segments = single.first().segments;
-            t->errorMessage = QStringLiteral("Paused because OpenLoad was closed.");
+            t->errorMessage = QStringLiteral("Paused because Haul was closed.");
             persist(*t);
         }
     }
     m_active.clear();
 }
 
-} // namespace openload
+} // namespace haul

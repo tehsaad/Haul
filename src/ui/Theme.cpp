@@ -8,12 +8,12 @@
 #include <QSvgRenderer>
 
 // The icons live in a static library, so their resource must be registered explicitly.
-static void initOpenLoadResources()
+static void initHaulResources()
 {
-    Q_INIT_RESOURCE(openload);
+    Q_INIT_RESOURCE(haul);
 }
 
-namespace openload::ui {
+namespace haul::ui {
 
 namespace {
 Palette g_current = Theme::dark();
@@ -119,7 +119,7 @@ QIcon Theme::icon(const QString &name, const QColor &color)
 
 void Theme::apply(QApplication &app, const QString &name)
 {
-    initOpenLoadResources();
+    initHaulResources();
     g_dark = name != QLatin1String("light");
     g_current = g_dark ? dark() : light();
     g_iconCache.clear();
@@ -297,4 +297,4 @@ QMessageBox { background: @surface; }
     return css;
 }
 
-} // namespace openload::ui
+} // namespace haul::ui

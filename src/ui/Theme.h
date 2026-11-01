@@ -8,7 +8,7 @@
 
 class QApplication;
 
-namespace openload::ui {
+namespace haul::ui {
 
 // Design tokens: every colour used by the interface comes from here.
 struct Palette {
@@ -50,4 +50,4 @@ public:
     static QColor stateColor(TaskState state);
 };
 
-} // namespace openload::ui
+} // namespace haul::ui

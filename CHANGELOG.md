@@ -1,6 +1,6 @@
 # Changelog
 
-All notable changes to OpenLoad are documented here (format: [Keep a Changelog](https://keepachangelog.com/)).
+All notable changes to Haul are documented here (format: [Keep a Changelog](https://keepachangelog.com/)).
 
 ## [0.1.0] — 2026-10-24 (unreleased)
 

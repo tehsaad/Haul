@@ -2,7 +2,7 @@
 
 #include "DownloadTask.h"
 
-namespace openload {
+namespace haul {
 
 constexpr qint64 kMinSegmentSize = 1024 * 1024; // never split into pieces smaller than 1 MiB
 constexpr int kMaxSegments = 16;
@@ -19,4 +19,4 @@ bool segmentsCoverExactly(const QVector<SegmentInfo> &segments, qint64 totalByte
 
 qint64 segmentsDownloaded(const QVector<SegmentInfo> &segments);
 
-} // namespace openload
+} // namespace haul

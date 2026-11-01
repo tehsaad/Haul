@@ -8,11 +8,11 @@ class QListWidget;
 class QStackedWidget;
 class QTableView;
 
-namespace openload {
+namespace haul {
 class DownloadManager;
 }
 
-namespace openload::ui {
+namespace haul::ui {
 
 class DownloadFilterModel;
 class DownloadTableModel;
@@ -60,4 +60,4 @@ private:
     bool m_recentDirty = true;
 };
 
-} // namespace openload::ui
+} // namespace haul::ui

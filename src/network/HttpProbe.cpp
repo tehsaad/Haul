@@ -2,7 +2,7 @@
 
 #include "core/FileNameUtils.h"
 
-namespace openload {
+namespace haul {
 
 namespace {
 
@@ -97,4 +97,4 @@ ProbeResult probeUrl(const QUrl &url, const NetworkOptions &options, const std::
     return result;
 }
 
-} // namespace openload
+} // namespace haul
