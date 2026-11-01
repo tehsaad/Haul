@@ -37,6 +37,7 @@ set(CPACK_DEBIAN_PACKAGE_DESCRIPTION
 # run time (SVG icons, platform integration), so they must be listed explicitly.
 set(CPACK_DEBIAN_PACKAGE_SHLIBDEPS ON)
 set(CPACK_DEBIAN_PACKAGE_DEPENDS "qt6-svg-plugins, qt6-qpa-plugins")
+set(CPACK_DEBIAN_PACKAGE_RECOMMENDS "ffmpeg")
 set(CPACK_DEBIAN_PACKAGE_RECOMMENDS "qt6-wayland")
 
 include(CPack)
