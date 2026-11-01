@@ -9,7 +9,7 @@ on:
 
 env:
   QT_VERSION: "6.8.3"
-  HAUL_VERSION: "0.3.0"
+  HAUL_VERSION: "0.4.0"
 
 jobs:
   windows:
@@ -57,6 +57,10 @@ jobs:
 
       - name: Test
         run: ctest --preset windows-msvc
+
+      - name: Browser extension in real Chrome
+        shell: pwsh
+        run: node tests/browser/e2e.mjs build/windows-msvc/src/haul-native-host.exe
 
       - name: Stage application (windeployqt + runtime DLLs)
         shell: pwsh
