@@ -23,12 +23,12 @@ cmake --preset windows-msvc -DCMAKE_TOOLCHAIN_FILE=%VCPKG_ROOT%\scripts\buildsys
 cmake --build --preset windows-msvc
 ctest --preset windows-msvc
 pwsh packaging\windows\stage.ps1 -BuildDir build\windows-msvc -StageDir %CD%\stage -VcpkgBin %VCPKG_ROOT%\installed\x64-windows\bin
-makensis /DVERSION=0.1.0 /DSTAGE=%CD%\stage /DOUTFILE=%CD%\Haul-0.1.0-Setup.exe packaging\windows\installer.nsi
+makensis /DVERSION=0.2.0 /DSTAGE=%CD%\stage /DOUTFILE=%CD%\Haul-0.2.0-Setup.exe packaging\windows\installer.nsi
 ```
 
 ## Installing, upgrading, uninstalling
 
-* **Install:** run `Haul-0.1.0-Setup.exe`. It needs administrator rights and installs to `C:\Program Files\Haul`, with a Start-menu entry and an entry in *Apps & features*. For a silent install: `Haul-0.1.0-Setup.exe /S /D=C:\Path`.
+* **Install:** run `Haul-0.2.0-Setup.exe`. It needs administrator rights and installs to `C:\Program Files\Haul`, with a Start-menu entry and an entry in *Apps & features*. For a silent install: `Haul-0.2.0-Setup.exe /S /D=C:\Path`.
 * **Upgrade:** run a newer installer. It replaces the program files in place. Your downloads, history (`%APPDATA%\Haul\Haul\haul.db`) and settings (`HKCU\Software\Haul`) are kept.
 * **Uninstall:** use *Settings → Apps*, or run `Uninstall.exe` (`/S` for silent). This removes the program files, shortcuts, the uninstall entry and the launch-at-login entry. Your downloaded files, history and settings are kept. To remove the history and settings too, delete `%APPDATA%\Haul` and `HKCU\Software\Haul`.
 
