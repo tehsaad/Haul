@@ -44,11 +44,13 @@ public slots:
 signals:
     void metadataReady(qint64 taskId, const QString &fileName, qint64 totalBytes, bool acceptRanges, int connections);
     void progress(qint64 taskId, qint64 downloaded, qint64 total, QVector<haul::SegmentInfo> segments);
+    void streamProgress(qint64 taskId, int piecesDone, int piecesTotal);
     void finished(haul::WorkerOutcome outcome);
 
 private:
     TransferError downloadSingleConnection(DownloadTask &task);
     TransferError downloadSegmented(DownloadTask &task, bool *fallBack);
+    TransferError downloadStream(DownloadTask &task);
     TransferError finalize(DownloadTask &task);
     void discardPartialData(DownloadTask &task);
 

@@ -16,6 +16,12 @@ add_library(haul_engine STATIC
     network/HttpDownloader.cpp
     network/SegmentDownloader.cpp
     network/DownloadWorker.cpp
+    media/StreamTypes.cpp
+    media/HlsParser.cpp
+    media/DashParser.cpp
+    media/StreamResolver.cpp
+    media/StreamDownloader.cpp
+    media/MediaMerger.cpp
     scheduler/DownloadQueue.cpp
     scheduler/Schedule.cpp
     scheduler/Scheduler.cpp

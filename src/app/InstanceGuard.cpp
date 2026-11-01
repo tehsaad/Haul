@@ -56,6 +56,10 @@ QByteArray encodeIpcCommand(const IpcCommand &command)
             o["name"] = command.fileName;
         if (!command.referrer.isEmpty())
             o["referrer"] = command.referrer;
+        if (!command.streamKind.isEmpty())
+            o["stream"] = command.streamKind;
+        if (!command.streamVariant.isEmpty())
+            o["variant"] = command.streamVariant;
         o["confirm"] = command.confirm;
     }
     return QJsonDocument(o).toJson(QJsonDocument::Compact) + '\n';
@@ -93,6 +97,9 @@ bool decodeIpcCommand(const QByteArray &line, IpcCommand *command, QString *erro
         if (origin.ok && !isFtpScheme(origin.url))
             command->referrer = origin.url.toString(QUrl::FullyEncoded);
     }
+    const QString stream = o.value("stream").toString();
+    command->streamKind = stream == QLatin1String("hls") || stream == QLatin1String("dash") ? stream : QString();
+    command->streamVariant = o.value("variant").toString().left(200);
     command->confirm = o.value("confirm").toBool();
     return true;
 }

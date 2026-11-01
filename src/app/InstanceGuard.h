@@ -18,6 +18,8 @@ struct IpcCommand {
     QString url;
     QString fileName;     // optional hint, sanitized later
     QString referrer;     // optional http(s) origin the link came from
+    QString streamKind;   // "hls" or "dash" when the link is a video stream
+    QString streamVariant; // quality already chosen in the browser panel
     bool confirm = false; // true: open the Add dialog instead of starting straight away
 };
 
