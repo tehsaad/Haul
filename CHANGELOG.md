@@ -2,7 +2,16 @@
 
 All notable changes to Haul are documented here (format: [Keep a Changelog](https://keepachangelog.com/)).
 
-## [0.4.0] — unreleased
+## [0.4.1] — unreleased
+
+### Changed
+- The list opens by itself when a page loads media, and closes after 12 seconds if ignored. A **Download with Haul** button sits on the video.
+- Files are checked with the server only after a click or hover on the list.
+- Links from the browser open Haul's dialog above other windows. On Linux with Wayland, Haul now runs through XWayland to allow this.
+- The toolbar popup explains that YouTube isn't supported.
+- The licence is Apache 2.0, matching `LICENSE`.
+
+## [0.4.0] — 2026-11-01
 
 ### Added
 - Media detection from real responses: status, Content-Type, Content-Disposition, request type and size. Works on extensionless and signed links, redirects, generic MIME types, ranged and chunked responses, and files players fetch in the background.
