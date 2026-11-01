@@ -20,6 +20,7 @@ haul_add_test(tst_storage)
 haul_add_test(tst_network)
 haul_add_test(tst_manager)
 haul_add_test(tst_instance)
+haul_add_test(tst_media)
 
 if(TARGET haul_ui)
     haul_add_test(tst_ui)

@@ -1,5 +1,6 @@
 #pragma once
 
+#include "media/StreamResolver.h"
 #include "network/HttpProbe.h"
 
 #include <QDialog>
@@ -22,6 +23,13 @@ class SettingsRepository;
 
 namespace haul::ui {
 
+// What checking a link found: the response, and the manifest if it turned out to be one.
+struct LinkInspection {
+    ProbeResult probe;
+    StreamInfo stream;
+    bool isStream = false;
+};
+
 // "Add download" dialog: validates the URL, inspects the server's response headers in the
 // background (cancellable), suggests a safe file name and warns about name conflicts.
 class AddDownloadDialog : public QDialog
@@ -34,6 +42,7 @@ public:
     void setUrl(const QString &url);
     void setFileName(const QString &name);
     void setReferrer(const QString &referrer);
+    void setPreferredVariant(const QString &variantId);
     qint64 createdTaskId() const { return m_createdId; }
 
 private:
@@ -42,6 +51,8 @@ private:
     void startInspection();
     void cancelInspection();
     void onInspectionFinished();
+    void showStream(const StreamInfo &stream, const QString &suggestedName);
+    void updateQualityDetails();
     void browseDirectory();
     void updateConflictHint();
     void updateButtons();
@@ -57,6 +68,9 @@ private:
     QLabel *m_sizeValue;
     QLabel *m_resumeValue;
     QLabel *m_typeValue;
+    QLabel *m_qualityCaption;
+    QComboBox *m_quality;
+    QLabel *m_qualityNote;
     QLineEdit *m_directory;
     QLineEdit *m_fileName;
     QLabel *m_conflictHint;
@@ -73,10 +87,12 @@ private:
     QPushButton *m_startButton;
 
     QTimer m_debounce;
-    QFutureWatcher<ProbeResult> m_watcher;
+    QFutureWatcher<LinkInspection> m_watcher;
     std::shared_ptr<std::atomic_bool> m_probeCancel;
     QString m_inspectedUrl;
     QString m_referrer;
+    QString m_preferredVariant;
+    StreamInfo m_stream;
     bool m_nameEditedByUser = false;
     bool m_probeFailedPermanently = false;
     qint64 m_createdId = 0;

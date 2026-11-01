@@ -135,7 +135,7 @@ int main(int argc, char *argv[])
             if (command.type == IpcCommand::Show)
                 window.bringToFront();
             else if (command.confirm)
-                window.askAboutDownload(command.url, command.fileName, command.referrer);
+                window.askAboutDownload(command.url, command.fileName, command.referrer, command.streamVariant);
             else
                 addDirectly(command.url);
         });

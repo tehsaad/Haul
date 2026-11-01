@@ -140,7 +140,7 @@ DownloadDetailsPage::DownloadDetailsPage(DownloadManager *manager, TaskActions *
     m_started = addField(grid, 3, 0, QStringLiteral("Started"), infoCard);
     m_completed = addField(grid, 3, 1, QStringLiteral("Completed"), infoCard);
     m_retries = addField(grid, 4, 0, QStringLiteral("Automatic retries"), infoCard);
-    m_connections = addField(grid, 4, 1, QStringLiteral("Connections"), infoCard);
+    m_connections = addField(grid, 4, 1, QStringLiteral("Connections / format"), infoCard);
     m_checksum = addField(grid, 5, 0, QStringLiteral("Integrity"), infoCard);
     for (int r = 0; r < 12; r += 2)
         grid->setRowMinimumHeight(r, 22);
@@ -247,7 +247,14 @@ void DownloadDetailsPage::refresh()
     m_completed->setText(formatTime(t->completedAt));
     m_retries->setText(QString::number(t->retryCount));
 
-    if (!t->segments.isEmpty())
+    if (t->isStream()) {
+        QStringList parts { t->streamKind == StreamKind::Hls ? QStringLiteral("HLS") : QStringLiteral("DASH") };
+        if (!t->streamLabel.isEmpty())
+            parts << t->streamLabel;
+        if (t->streamPiecesTotal > 0)
+            parts << QStringLiteral("%1 of %2 pieces").arg(t->streamPiecesDone).arg(t->streamPiecesTotal);
+        m_connections->setText(parts.join(QStringLiteral(" · ")));
+    } else if (!t->segments.isEmpty())
         m_connections->setText(QStringLiteral("%1 (segmented)").arg(t->segments.size()));
     else if (s == TaskState::Downloading || s == TaskState::Completed)
         m_connections->setText(t->acceptRanges ? QStringLiteral("1") : QStringLiteral("1 (server does not support ranges)"));

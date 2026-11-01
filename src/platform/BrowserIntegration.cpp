@@ -36,8 +36,51 @@ bool parseBrowserMessage(const QByteArray &json, IpcCommand *command, QString *e
     forwarded["url"] = o.value("url").toString();
     forwarded["name"] = o.value("filename").toString();
     forwarded["referrer"] = o.value("referrer").toString();
+    forwarded["stream"] = o.value("stream").toString();
+    forwarded["variant"] = o.value("variant").toString();
     forwarded["confirm"] = true; // a browser can suggest a download, never start one by itself
     return decodeIpcCommand(QJsonDocument(forwarded).toJson(QJsonDocument::Compact), command, error);
+}
+
+bool isInspectMessage(const QByteArray &json, QUrl *url, QByteArray *referer)
+{
+    const QJsonObject o = QJsonDocument::fromJson(json).object();
+    if (o.value("type").toString() != QLatin1String("inspect"))
+        return false;
+    *url = QUrl(o.value("url").toString());
+    const QString origin = o.value("referrer").toString();
+    if (origin.startsWith(QLatin1String("http")))
+        *referer = origin.toUtf8();
+    return true;
+}
+
+QJsonObject describeStream(const StreamInfo &info)
+{
+    QJsonObject o;
+    o["ok"] = info.ok;
+    o["kind"] = streamKindKey(info.kind);
+    if (!info.ok) {
+        o["error"] = info.error.message;
+        o["encrypted"] = info.error.message == QLatin1String(kEncryptedStreamMessage);
+        o["restricted"] = info.error.httpStatus == 401 || info.error.httpStatus == 403;
+        return o;
+    }
+    o["duration"] = info.duration;
+    QJsonArray variants;
+    for (int i = 0; i < info.variants.size() && i < 30; ++i) {
+        const StreamVariant &variant = info.variants[i];
+        QJsonObject v;
+        v["id"] = variant.id;
+        v["label"] = variant.label();
+        v["size"] = static_cast<double>(variant.estimatedBytes);
+        variants.append(v);
+    }
+    o["variants"] = variants;
+    QJsonArray children;
+    for (int i = 0; i < info.childUrls.size() && i < 60; ++i)
+        children.append(info.childUrls[i]);
+    o["children"] = children;
+    return o;
 }
 
 QByteArray nativeHostManifest(const QString &hostPath, bool firefox)

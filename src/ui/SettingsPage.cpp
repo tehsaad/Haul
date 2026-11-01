@@ -2,6 +2,7 @@
 
 #include "Theme.h"
 #include "Widgets.h"
+#include "media/MediaMerger.h"
 #include "platform/BrowserIntegration.h"
 #include "platform/Platform.h"
 
@@ -132,6 +133,14 @@ SettingsPage::SettingsPage(SettingsRepository *settings, QWidget *parent)
         m_launchAtLogin = new QCheckBox(QStringLiteral("Launch Haul when I sign in"), content);
         g->addWidget(m_launchAtLogin, 3, 0, 1, 2);
     }
+
+    // Video
+    g = addSection(root, QStringLiteral("Video"), QString(), content);
+    const QString ffmpeg = findFfmpeg();
+    g->addWidget(makeLabel(ffmpeg.isEmpty()
+                               ? QStringLiteral("FFmpeg isn't installed. Streams still download, but videos with separate picture and sound are saved as two files, and some stay .ts instead of .mp4.")
+                               : QStringLiteral("FFmpeg found: %1").arg(QDir::toNativeSeparators(ffmpeg)),
+                           QStringLiteral("muted"), content), 0, 0, 1, 2);
 
     // Browser
     g = addSection(root, QStringLiteral("Browser"),

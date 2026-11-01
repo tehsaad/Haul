@@ -2,6 +2,19 @@
 
 All notable changes to Haul are documented here (format: [Keep a Changelog](https://keepachangelog.com/)).
 
+## [0.3.0] — unreleased
+
+### Added
+- Unencrypted HLS and MPEG-DASH downloads: master and media playlists, SegmentTemplate, SegmentTimeline, SegmentList and single-file representations, byte ranges and fragmented MP4.
+- Quality selection with size estimates in the browser panel and the Add dialog.
+- Pieces download several at a time, are retried individually, and survive pausing and restarting.
+- Optional FFmpeg support to join separate audio and video and to convert `.ts` to `.mp4`. It is only ever given local files.
+- The browser extension detects manifests that players fetch, and shows protected streams as unavailable.
+- Database migration to version 3.
+
+### Security
+- Encrypted, live and restricted streams are refused, including encryption that only appears in the init data. A public manifest cannot point Haul at the user's local network.
+
 ## [0.2.1] — unreleased
 
 ### Fixed

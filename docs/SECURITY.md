@@ -36,7 +36,7 @@ The extension talks to Haul through the browser's native messaging, not a networ
 * Registration is opt-in (Settings → Browser), per user, and removed when the option is turned off.
 * The host accepts one message of at most 64 KiB and forwards only a link that passes the same URL validation as the Add dialog.
 * A link from the browser always opens the Add dialog. The browser can suggest a download but cannot start one.
-* The extension asks to run on all http and https sites, which Chrome words as "read and change all your data". It needs this to notice media files and show its panel. It only looks at response headers and `<video>`/`<audio>` addresses, and never reads cookies, passwords or page text. Nothing is sent anywhere except to Haul on this computer.
+* The extension asks to run on all http and https sites, which Chrome words as "read and change all your data". It needs this to notice media files and show its panel. It looks at response headers, `<video>`/`<audio>` addresses, and the page's title (to name the video). It never reads cookies, passwords or other page text. Nothing is sent anywhere except to Haul on this computer. Manifests are read by the native host, without the browser's cookies.
 * Only the origin of the page a link came from is passed along (`https://site/`), not the full address. It is kept in memory like a login.
 
 ## Single-instance channel
@@ -50,4 +50,14 @@ User names, passwords and cookies are kept in memory only: they are never writte
 ## FTP
 
 Plain FTP sends everything, including passwords, unencrypted. `ftps://` verifies the server's certificate like HTTPS does. A web server cannot redirect Haul to FTP.
+
+## Video streams
+
+Haul handles unencrypted HLS and DASH only, and has no site-specific extraction.
+
+* **Encrypted streams are refused, never decrypted.** That covers any `EXT-X-KEY` or `EXT-X-SESSION-KEY` whose method isn't `NONE`, DASH `ContentProtection`, and `encv`, `enca`, `sinf` or `pssh` markers in downloaded init data. Encryption that starts partway through a playlist is caught too.
+* **FFmpeg only sees local files** Haul has already assembled, with `-protocol_whitelist file,pipe`. It is never given a manifest or a URL, so it cannot fetch a key or decrypt a stream by itself.
+* **Refused access stops the download.** A 401, 403 or 410 on a piece is permanent and not retried, and a web page served in place of video is rejected rather than saved.
+* **Manifests are untrusted.** Size is capped at 10 MiB and pieces at 200,000. XML is parsed without fetching external entities, piece addresses must be http or https, and a manifest on the public internet can't point at localhost or private network addresses.
+* YouTube hosts are excluded from detection. Live streams are refused because they never end.
 

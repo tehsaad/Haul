@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
   "name": "Haul",
-  "version": "0.2.1",
-  "description": "Sends downloads, videos and audio files to the Haul download manager.",
+  "version": "0.3.0",
+  "description": "Finds video files and streams on pages and sends downloads to the Haul download manager.",
   "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAuOSSgDrQ4cyjPFedwpszA7AHYexcNjWkRhbKGTsUcc+lBYDfqa8iG1HZvRAEaX3LKwfE3yFcknSSykVIRxI/AIacPBXsLUixSi4x2JEqfLft9JkosKak470c6lQJLAsgZAPcp3DephkwwXV4/Aa3bzB8llZo/lcfl84B0ePnUOx/ZVWDw9/ZBtK2O0fM+jFAijoVgHrhY2BNP3WOQx2kHS8bXwP8JbiHtWnip+EAH8jghdC66xXzgxrT4PGyq6OtXkUfuDNoPr+4jnym7gwKLRJfyBNQh3xkY/2rdeSzKUlLFttx952EfNa9LX18riv4esBeqWFbgti+jepsfiOv2QIDAQAB",
   "permissions": [
     "contextMenus",

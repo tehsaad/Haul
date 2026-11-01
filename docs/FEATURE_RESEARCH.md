@@ -34,3 +34,4 @@ Features that IDM describes and that Haul deliberately leaves out:
 * the site grabber or spider;
 * any DRM, login or paywall circumvention;
 * torrents.
+| 17 | Video detection | A panel offers video found on a page. | Generic detection of files and unencrypted HLS and DASH manifests, with quality selection. No per-site logic. | Encrypted and live streams, YouTube and multi-period DASH are not supported. | `tst_media`, `tests/browser/e2e.mjs` |

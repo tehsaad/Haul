@@ -18,6 +18,7 @@
 
 #include <QApplication>
 #include <QCheckBox>
+#include <QComboBox>
 #include <QElapsedTimer>
 #include <QLabel>
 #include <QLineEdit>
@@ -258,6 +259,44 @@ private slots:
         qputenv("XDG_CONFIG_HOME", oldConfig);
     }
 #endif
+
+    void addDialogOffersStreamQualities()
+    {
+        ui::AddDownloadDialog dialog(manager.get(), settings.get());
+        dialog.setPreferredVariant("360p-800000");
+        dialog.setUrl(server.url("/hls/master.m3u8?count=3&ui=1"));
+        dialog.show();
+        QTRY_VERIFY_WITH_TIMEOUT(hasVisibleLabelContaining(&dialog, QStringLiteral("Video stream found")), 10000);
+        QComboBox *quality = nullptr;
+        for (QComboBox *box : dialog.findChildren<QComboBox *>()) {
+            if (box->findText("720p") >= 0)
+                quality = box;
+        }
+        QVERIFY(quality && quality->isVisible());
+        QCOMPARE(quality->currentText(), QString("360p")); // the choice made in the browser panel
+        QVERIFY(hasVisibleLabelContaining(&dialog, QStringLiteral("About")));
+        for (QPushButton *b : dialog.findChildren<QPushButton *>()) {
+            if (b->text() == "Start now")
+                b->click();
+        }
+        const qint64 id = dialog.createdTaskId();
+        QVERIFY(id > 0);
+        QCOMPARE(manager->task(id)->streamKind, StreamKind::Hls);
+        QCOMPARE(manager->task(id)->streamVariant, QString("360p-800000"));
+        QTRY_COMPARE_WITH_TIMEOUT(manager->task(id)->state, TaskState::Completed, 15000);
+    }
+
+    void addDialogRefusesEncryptedStream()
+    {
+        ui::AddDownloadDialog dialog(manager.get(), settings.get());
+        dialog.setUrl(server.url("/hls/high.m3u8?enc=key"));
+        dialog.show();
+        QTRY_VERIFY_WITH_TIMEOUT(hasVisibleLabelContaining(&dialog, QStringLiteral("encrypted")), 10000);
+        for (QPushButton *b : dialog.findChildren<QPushButton *>()) {
+            if (b->text() == "Start now")
+                QVERIFY(!b->isEnabled());
+        }
+    }
 
     void lightThemeApplies()
     {
