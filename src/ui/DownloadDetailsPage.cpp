@@ -25,7 +25,7 @@ namespace {
 
 QLabel *addField(QGridLayout *grid, int row, int column, const QString &caption, QWidget *parent)
 {
-    grid->addWidget(makeLabel(caption.toUpper(), QStringLiteral("caption"), parent), row * 2, column);
+    grid->addWidget(makeLabel(caption, QStringLiteral("caption"), parent), row * 2, column);
     QLabel *value = makeLabel(QStringLiteral("—"), QStringLiteral("value"), parent);
     value->setTextInteractionFlags(Qt::TextSelectableByMouse);
     value->setWordWrap(true);
