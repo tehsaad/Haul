@@ -171,11 +171,14 @@ QVariant DownloadTableModel::data(const QModelIndex &index, int role) const
                 return t->downloadedBytes > 0 ? formatBytes(t->downloadedBytes) + QStringLiteral(" / ?") : QStringLiteral("Unknown");
             if (t->state == TaskState::Completed)
                 return formatBytes(t->totalBytes);
-            return formatBytes(t->downloadedBytes) + QStringLiteral(" / ") + formatBytes(t->totalBytes);
+            // A stream's total is an estimate until its last piece arrives.
+            return formatBytes(t->downloadedBytes) + (t->isStream() ? QStringLiteral(" / ≈") : QStringLiteral(" / ")) + formatBytes(t->totalBytes);
         case Speed:
             return t->state == TaskState::Downloading ? formatSpeed(t->speed) : QString();
         case Eta:
-            return t->state == TaskState::Downloading ? formatDuration(eta) : QString();
+            if (t->state != TaskState::Downloading)
+                return QString();
+            return (t->isStream() && eta >= 0 ? QStringLiteral("≈") : QString()) + formatDuration(eta);
         case Category: return categoryForFileName(t->fileName);
         case Added: return QLocale().toString(t->createdAt, QLocale::ShortFormat);
         default: return {};

@@ -183,6 +183,31 @@ private slots:
         QCOMPARE(got.url, QString("https://example.com/x.iso"));
     }
 
+    void nativeHostDescribesStreams()
+    {
+        testsupport::TestServer server;
+        QVERIFY(server.start());
+        auto ask = [&](const QString &path) {
+            QProcess host;
+            host.start(QStringLiteral(HAUL_NATIVE_HOST), { QString::fromLatin1(platform::kFirefoxExtensionId) });
+            host.waitForStarted();
+            const QByteArray message = "{\"type\":\"inspect\",\"url\":\"" + server.url(path).toUtf8() + "\"}";
+            host.write(frame(message));
+            host.closeWriteChannel();
+            host.waitForFinished(15000);
+            return QJsonDocument::fromJson(host.readAllStandardOutput().mid(4)).object();
+        };
+        QJsonObject answer = ask("/hls/master.m3u8");
+        QVERIFY(answer["ok"].toBool());
+        QCOMPARE(answer["kind"].toString(), QString("hls"));
+        QCOMPARE(answer["variants"].toArray().first().toObject()["label"].toString(), QString("720p"));
+        QCOMPARE(answer["children"].toArray().size(), 2);
+
+        answer = ask("/hls/high.m3u8?enc=key");
+        QVERIFY(!answer["ok"].toBool());
+        QVERIFY(answer["encrypted"].toBool());
+    }
+
     void nativeHostRefusesOtherExtensions()
     {
         QProcess host;

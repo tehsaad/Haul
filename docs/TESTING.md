@@ -45,6 +45,7 @@ These were recorded on **2026-10-24** on Ubuntu 26.04 (x86_64, g++ 15.2, Qt 6.10
 | `tst_network` | 39 passed, 0 failed | probe (ranges, no ranges, unknown length, 404, name sanitising, redirects, `file://` redirect refused, cancellation), full download, unknown length, HTTP errors and Retry-After, connection refused, dropped connection, resume with ranges, server ignoring ranges, content changing between attempts, wrong Content-Range rejected, unwritable destination, prompt cancellation (< 3 s), progress callbacks, bandwidth limit, segmented download and assembly, segmented resume, segmented fallback, segmented wrong ranges, incomplete segments refused, worker checksum verify and mismatch, existing file never overwritten, worker restart when the remote file changed |
 | `tst_manager` | 21 passed, 0 failed | add → complete → persisted, invalid and duplicate rejection, unique names, pause/resume (single and 4-segment), cancel deletes partial data, invalid operations rejected, transient retries, bounded retries, permanent errors not retried, concurrency limit never exceeded (max active observed = 1 with limit 1), queue waits until started, stop-queue re-queues, priority and ordering, graceful restart restores and resumes, crash recovery and resume, remove with file, remove while downloading, bandwidth limit from settings |
 | `tst_instance` | 12 passed, 0 failed | only one copy can run, lock freed on exit, commands reach the running copy, bad commands refused, only our extension accepted, browser links always ask first, manifests, real native host forwarding and refusal |
+| `tst_media` | see "Video streams" | HLS and DASH parsing, refusals, downloading, retries, resume, cancel, FFmpeg merging |
 | `tst_ui` | 11 passed, 0 failed | empty state on first run, all screens reachable, add dialog rejects `ftp://`, add dialog inspects a real server (size, resume support, Content-Disposition name) and starts the download, dashboard rows equal real tasks, segment panel shown only for segmented downloads, **GUI responsiveness**, the list keeps its room at the minimum window size, light/dark theme switch |
 
 (QtTest counts include each suite's `initTestCase` and `cleanupTestCase`, and every data row.)
@@ -55,9 +56,15 @@ These were recorded on **2026-10-24** on Ubuntu 26.04 (x86_64, g++ 15.2, Qt 6.10
 
 **Measured worst gap: 14 ms** (the limit is 250 ms).
 
+## Video streams
+
+`tst_media` covers master and media playlists, byte ranges, fragmented MP4, SegmentTemplate, SegmentTimeline (including `r="-1"`), SegmentList, single files, encrypted, late-encrypted, session-key and DRM streams, live streams, multi-period and malformed manifests, external XML entities, local-network addresses, piece order, retries, 403 and web-page responses, encrypted init data, resume, cancel, and the full path through `DownloadManager`.
+
+`realHlsBecomesPlayableMp4` and `realDashMergesAudioAndVideo` generate real media with FFmpeg and check the result with `ffprobe`. They skip when FFmpeg isn't installed, so they only run where it is (CI installs it). No speed measurements have been made for streams.
+
 ## Browser extension in real Chrome
 
-`tests/browser/e2e.mjs` loads the unpacked extension into Chrome with a temporary profile, using the real `haul-native-host` and a stand-in for Haul's socket. It needs Node and Chrome. Run on 2026-11-01 with Chrome 156: extension id matches the host, panel appears by itself on a page with a video, its button reaches Haul with `confirm: true`, a browser download is taken over, and only the site's origin is sent. All 6 checks passed.
+`tests/browser/e2e.mjs` loads the unpacked extension into Chrome with a temporary profile, using the real `haul-native-host` and a stand-in for Haul's socket. It needs Node and Chrome. Run on 2026-11-01 with Chrome 156: extension id matches the host, panel appears by itself on a page with a video, its button reaches Haul with `confirm: true`, a browser download is taken over, and only the site's origin is sent. All 12 checks passed, including a stream fetched with `fetch()` the way hls.js does, quality selection, child playlists not listed twice, and an encrypted stream being named with nothing to press.
 
 ## Segmented download benchmark
 

@@ -24,6 +24,9 @@ enum class Priority { Low = 0, Normal = 1, High = 2 };
 
 QString priorityLabel(Priority priority);
 
+// How a download is delivered: one ordinary file, or a stream made of many pieces.
+enum class StreamKind { File = 0, Hls = 1, Dash = 2 };
+
 enum class ChecksumStatus {
     NotChecked = 0, // no trusted checksum was supplied
     Verified = 1,   // SHA-256 matched the checksum the user supplied
@@ -38,6 +41,10 @@ struct DownloadTask {
     QString directory;
     QString fileName;
     bool autoName = false; // name guessed from the URL; may be replaced by the server's suggestion
+
+    StreamKind streamKind = StreamKind::File;
+    QString streamVariant; // chosen quality; empty means the best one
+    QString streamLabel;   // "1080p", for showing to the user
 
     TaskState state = TaskState::Queued;
     Priority priority = Priority::Normal;
@@ -69,10 +76,14 @@ struct DownloadTask {
     bool startRequested = false; // "Start now": does not wait for the queue to be started
     bool startedByQueue = false;
     QDateTime retryAt;       // when a scheduled automatic retry may start
+    int streamPiecesDone = 0;
+    int streamPiecesTotal = 0;
 
     QString finalPath() const;
     QString partPath() const;
     QString segmentPath(int index) const;
+    QString streamDirectory() const;
+    bool isStream() const { return streamKind != StreamKind::File; }
     int progressPercent() const; // -1 when the size is unknown
 };
 

@@ -3,6 +3,7 @@
 // starting Haul first if needed, writes one reply and exits. It never downloads anything itself.
 
 #include "app/InstanceGuard.h"
+#include "core/UrlValidator.h"
 #include "platform/BrowserIntegration.h"
 
 #include <QCoreApplication>
@@ -35,17 +36,22 @@ bool readMessage(QByteArray *message)
     return std::fread(message->data(), 1, length, stdin) == length;
 }
 
+void writeReply(const QJsonObject &o)
+{
+    const QByteArray body = QJsonDocument(o).toJson(QJsonDocument::Compact);
+    const std::uint32_t length = static_cast<std::uint32_t>(body.size());
+    std::fwrite(&length, sizeof(length), 1, stdout);
+    std::fwrite(body.constData(), 1, length, stdout);
+    std::fflush(stdout);
+}
+
 void reply(bool ok, const QString &error = QString())
 {
     QJsonObject o;
     o["ok"] = ok;
     if (!ok)
         o["error"] = error;
-    const QByteArray body = QJsonDocument(o).toJson(QJsonDocument::Compact);
-    const std::uint32_t length = static_cast<std::uint32_t>(body.size());
-    std::fwrite(&length, sizeof(length), 1, stdout);
-    std::fwrite(body.constData(), 1, length, stdout);
-    std::fflush(stdout);
+    writeReply(o);
 }
 
 } // namespace
@@ -71,6 +77,21 @@ int main(int argc, char *argv[])
     if (!readMessage(&message)) {
         reply(false, QStringLiteral("Bad message."));
         return 1;
+    }
+    QUrl inspectUrl;
+    QByteArray referer;
+    if (platform::isInspectMessage(message, &inspectUrl, &referer)) {
+        const UrlCheck check = validateDownloadUrl(inspectUrl.toString());
+        if (!check.ok || isFtpUrl(check.url)) {
+            reply(false, check.ok ? QStringLiteral("Streams can only be downloaded over http or https.") : check.error);
+            return 1;
+        }
+        curl_global_init(CURL_GLOBAL_DEFAULT);
+        NetworkOptions options;
+        options.login.referer = referer;
+        writeReply(platform::describeStream(inspectStream(check.url, options)));
+        curl_global_cleanup();
+        return 0;
     }
     if (!platform::parseBrowserMessage(message, &command, &error)) {
         reply(false, error);

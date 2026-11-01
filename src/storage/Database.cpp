@@ -51,6 +51,13 @@ const char *const kMigrations[] = {
     R"SQL(
     ALTER TABLE downloads ADD COLUMN auto_name INTEGER NOT NULL DEFAULT 0;
     )SQL",
+
+    // Version 3: streamed videos (HLS and DASH) and the quality chosen for them.
+    R"SQL(
+    ALTER TABLE downloads ADD COLUMN stream_kind INTEGER NOT NULL DEFAULT 0;
+    ALTER TABLE downloads ADD COLUMN stream_variant TEXT;
+    ALTER TABLE downloads ADD COLUMN stream_label TEXT;
+    )SQL",
 };
 
 constexpr int kMigrationCount = static_cast<int>(sizeof(kMigrations) / sizeof(kMigrations[0]));

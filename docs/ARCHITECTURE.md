@@ -114,3 +114,20 @@ Packaging lives only on the platform branches: Debian packaging on `feature/linu
 | `QSettings` for preferences | It uses each platform's native location and needs no schema. |
 | A value-type `DownloadTask` copied into workers | No shared mutable state between threads. |
 | No background service or daemon | Simpler and safer. The scheduler therefore only runs while the app is open, and the UI says so. |
+
+## Video streams
+
+`src/media/` handles HLS and DASH, and plugs into the existing worker and manager instead of adding a second download system.
+
+| Part | Job |
+|---|---|
+| `HlsParser`, `DashParser` | Turn manifest text into variants and pieces. Pure functions with no network, so they are easy to test. |
+| `StreamResolver` | Fetches manifests, lists qualities (`inspectStream`), builds the piece list for one quality (`resolveStreamPlan`), and enforces the refusal rules. |
+| `StreamDownloader` | Fetches pieces with one libcurl multi handle. Finished pieces are `.seg` files in `<file>.haul-stream/`, so the disk is the record of progress. |
+| `MediaMerger` | Joins pieces and optionally runs FFmpeg. |
+| `DownloadWorker::downloadStream` | Ties these together, then uses the normal `finalize()`. |
+
+Detection lives in the extension's `background.js`, but the only parser is the C++ one: the extension asks `haul-native-host` to describe a manifest. Pieces aren't stored in `task.segments` or the database, because a long video has thousands of them.
+
+FFmpeg runs as a separate program instead of being linked. That keeps the download small, leaves Haul's licence unaffected, and users can update it themselves.
+

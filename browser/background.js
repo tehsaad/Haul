@@ -1,5 +1,5 @@
 // Haul browser extension (background). It hands downloads to the Haul desktop app and notices
-// audio and video files that pages load. It never reads cookies, passwords or page text.
+// video files and streams that pages load. It never reads cookies or passwords.
 const api = globalThis.browser ?? globalThis.chrome;
 const HOST = "io.github.tehsaad.haul";
 const MENU_ID = "haul-download";
@@ -8,10 +8,13 @@ const MIN_MEDIA_SIZE = 1024 * 1024; // smaller responses are icons, previews and
 // YouTube streams are protected and its terms forbid downloading, so Haul stays out of them.
 const EXCLUDED_HOSTS = /(^|\.)(youtube\.com|youtube-nocookie\.com|youtu\.be|googlevideo\.com|ytimg\.com)$/i;
 const MEDIA_NAME = /\.(mp4|m4v|webm|mkv|mov|avi|flv|wmv|mp3|m4a|flac|wav|ogg|opus|aac)$/i;
-const STREAM_PIECE = /\.(ts|m4s|m3u8|mpd)$/i;
+const STREAM_PIECE = /\.(ts|m4s)$/i;
+const MANIFEST_NAME = /\.(m3u8|m3u|mpd)$/i;
+const MANIFEST_TYPE = /mpegurl|dash\+xml/i;
 
 const passThrough = new Set(); // downloads restarted in the browser because Haul was unavailable
 const mediaByTab = new Map();
+const streamChildren = new Map(); // tab -> playlists that belong to a master already listed
 
 function originOf(page) {
   try {
@@ -22,17 +25,23 @@ function originOf(page) {
   }
 }
 
-function sendToHaul(url, filename, referrer) {
+function askHost(message) {
   return new Promise((resolve) => {
-    const message = { type: "add", url, filename: filename || "", referrer: originOf(referrer) };
     const done = (answer) => {
       const failure = api.runtime.lastError;
-      resolve(failure ? { ok: false, error: failure.message } : answer);
+      resolve(failure ? { ok: false, error: failure.message, unreachable: true } : answer);
     };
     const result = api.runtime.sendNativeMessage(HOST, message, done);
     if (result && result.then) { // Firefox returns a promise
-      result.then(resolve, (e) => resolve({ ok: false, error: e.message }));
+      result.then(resolve, (e) => resolve({ ok: false, error: e.message, unreachable: true }));
     }
+  });
+}
+
+function sendToHaul(url, filename, referrer, stream, variant) {
+  return askHost({
+    type: "add", url, filename: filename || "", referrer: originOf(referrer),
+    stream: stream || "", variant: variant || "",
   }).then((answer) => {
     const ok = !!(answer && answer.ok);
     api.action.setBadgeText({ text: ok ? "" : "!" });
@@ -79,9 +88,64 @@ function header(details, name) {
   return found ? found.value : "";
 }
 
+function isExcluded(details) {
+  const url = new URL(details.url);
+  if (EXCLUDED_HOSTS.test(url.hostname) || details.statusCode >= 300) return true;
+  const page = details.documentUrl || details.initiator;
+  try {
+    return !!page && EXCLUDED_HOSTS.test(new URL(page).hostname);
+  } catch {
+    return false;
+  }
+}
+
+function isManifest(details) {
+  return MANIFEST_NAME.test(new URL(details.url).pathname) || MANIFEST_TYPE.test(header(details, "content-type"));
+}
+
+function tabState(tabId) {
+  if (!mediaByTab.has(tabId)) mediaByTab.set(tabId, new Map());
+  if (!streamChildren.has(tabId)) streamChildren.set(tabId, new Set());
+  return mediaByTab.get(tabId);
+}
+
+function tell(tabId, message) {
+  api.tabs.sendMessage(tabId, message, { frameId: 0 }).catch(() => {});
+}
+
+// One parser for everything: the native host reads the manifest and lists its qualities. A master
+// playlist also names its child playlists, which are the same video and must not be listed twice.
+async function offerStream(details) {
+  const tabId = details.tabId;
+  const media = tabState(tabId);
+  const url = details.url;
+  if (media.has(url) || streamChildren.get(tabId).has(url)) return;
+  const entry = { url, name: "", size: 0, stream: true, pending: true };
+  media.set(url, entry);
+
+  const answer = await askHost({ type: "inspect", url, referrer: originOf(details.documentUrl || details.initiator) });
+  if (!mediaByTab.has(tabId) || streamChildren.get(tabId).has(url)) return;
+  delete entry.pending;
+  if (answer && answer.ok && answer.kind === "file") {
+    media.delete(url);
+    return;
+  }
+  entry.kind = answer ? answer.kind : "";
+  entry.variants = (answer && answer.variants) || [];
+  entry.error = answer && answer.ok ? "" : (answer ? answer.error : "No answer from Haul.");
+  entry.encrypted = !!(answer && answer.encrypted);
+  entry.restricted = !!(answer && answer.restricted);
+  entry.unreachable = !!(answer && answer.unreachable);
+
+  for (const child of (answer && answer.children) || []) {
+    streamChildren.get(tabId).add(child);
+    if (media.delete(child)) tell(tabId, { type: "haul-media-remove", url: child });
+  }
+  tell(tabId, { type: "haul-media", media: entry });
+}
+
 function describeMedia(details) {
   const url = new URL(details.url);
-  if (EXCLUDED_HOSTS.test(url.hostname) || details.statusCode >= 300) return null;
   const type = header(details, "content-type").toLowerCase();
   const disposition = /filename\*?=(?:UTF-8'')?"?([^";]+)/i.exec(header(details, "content-disposition"));
   const name = decodeURIComponent(disposition ? disposition[1] : url.pathname.split("/").pop() || url.hostname);
@@ -95,31 +159,42 @@ function describeMedia(details) {
 
 api.webRequest.onHeadersReceived.addListener(
   (details) => {
-    if (details.tabId < 0) return;
+    if (details.tabId < 0 || isExcluded(details)) return;
+    if (isManifest(details)) {
+      offerStream(details);
+      return;
+    }
+    if (details.type === "xmlhttprequest") return; // players fetch stream pieces this way
     const media = describeMedia(details);
     if (!media) return;
-    if (!mediaByTab.has(details.tabId)) mediaByTab.set(details.tabId, new Map());
-    mediaByTab.get(details.tabId).set(media.url, media);
-    api.tabs.sendMessage(details.tabId, { type: "haul-media", media }, { frameId: 0 }).catch(() => {});
+    tabState(details.tabId).set(media.url, media);
+    tell(details.tabId, { type: "haul-media", media });
   },
-  { urls: ["http://*/*", "https://*/*"], types: ["media", "object", "other"] },
+  // Players such as hls.js and dash.js fetch manifests as xmlhttprequest.
+  { urls: ["http://*/*", "https://*/*"], types: ["media", "object", "other", "xmlhttprequest"] },
   ["responseHeaders"]
 );
 
 // A new page starts with an empty list.
 api.webRequest.onBeforeRequest.addListener(
-  (details) => { mediaByTab.delete(details.tabId); },
+  (details) => {
+    mediaByTab.delete(details.tabId);
+    streamChildren.delete(details.tabId);
+  },
   { urls: ["http://*/*", "https://*/*"], types: ["main_frame"] }
 );
-api.tabs.onRemoved.addListener((tabId) => mediaByTab.delete(tabId));
+api.tabs.onRemoved.addListener((tabId) => {
+  mediaByTab.delete(tabId);
+  streamChildren.delete(tabId);
+});
 
 api.runtime.onMessage.addListener((message, sender, respond) => {
   if (message.type === "haul-list") {
-    respond([...(mediaByTab.get(sender.tab.id) ?? new Map()).values()]);
+    respond([...(mediaByTab.get(sender.tab.id) ?? new Map()).values()].filter((media) => !media.pending));
     return false;
   }
   if (message.type === "haul-add") {
-    sendToHaul(message.url, message.filename, sender.tab && sender.tab.url).then(respond);
+    sendToHaul(message.url, message.filename, sender.tab && sender.tab.url, message.stream, message.variant).then(respond);
     return true; // the answer comes later
   }
   return false;

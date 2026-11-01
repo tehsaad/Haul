@@ -207,9 +207,9 @@ void MainWindow::bringToFront()
     activateWindow();
 }
 
-void MainWindow::askAboutDownload(const QString &url, const QString &fileName, const QString &referrer)
+void MainWindow::askAboutDownload(const QString &url, const QString &fileName, const QString &referrer, const QString &variant)
 {
-    m_pendingLinks.append({ url, fileName, referrer });
+    m_pendingLinks.append({ url, fileName, referrer, variant });
     if (m_pendingLinks.size() == 1) // otherwise the loop below is already showing a dialog
         QTimer::singleShot(0, this, &MainWindow::showNextPendingLink);
 }
@@ -224,14 +224,15 @@ void MainWindow::showNextPendingLink()
     }
     bringToFront();
     const PendingLink link = m_pendingLinks.first();
-    openAddDialog(link.url, link.fileName, link.referrer);
+    openAddDialog(link.url, link.fileName, link.referrer, link.variant);
     m_pendingLinks.removeFirst();
     showNextPendingLink();
 }
 
-qint64 MainWindow::openAddDialog(const QString &url, const QString &fileName, const QString &referrer)
+qint64 MainWindow::openAddDialog(const QString &url, const QString &fileName, const QString &referrer, const QString &variant)
 {
     AddDownloadDialog dialog(m_manager, m_settings, this);
+    dialog.setPreferredVariant(variant);
     if (!url.isEmpty())
         dialog.setUrl(url);
     if (!fileName.isEmpty())

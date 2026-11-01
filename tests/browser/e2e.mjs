@@ -63,5 +63,39 @@ try {
   const captured = received.find((m) => (m.url || "").includes("thing.zip"));
   check("browser download is taken over automatically", !!captured && captured.confirm === true, JSON.stringify(captured));
   check("referrer is only the site's address", !!captured && captured.referrer === new URL(base).origin + "/", captured?.referrer);
+
+  // A player fetching a manifest with fetch(), the way hls.js does.
+  const stream = await send("Target.createTarget", { url: `${base}/streampage` });
+  const streamSession = (await send("Target.attachToTarget", { targetId: stream.targetId, flatten: true })).sessionId;
+  const jsS = async (expression) => (await send("Runtime.evaluate", { expression, awaitPromise: true, returnByValue: true }, streamSession)).result.value;
+  const panel = `document.getElementById("haul-panel-host")?.shadowRoot`;
+  let labels = [];
+  for (let i = 0; i < 60 && labels.length < 2; i++) {
+    await sleep(250);
+    labels = (await jsS(`[...(${panel}?.querySelectorAll("option") ?? [])].map(o => o.textContent)`)) || [];
+  }
+  check("HLS stream appears with its qualities", labels.join() === "720p,360p", labels.join());
+  check("stream row uses the page title", (await jsS(`${panel}.querySelector(".name").textContent`)) === "Stream lesson.mp4");
+  check("stream row shows a size estimate", /^About /.test(await jsS(`${panel}.querySelector(".size").textContent`)));
+  await jsS(`fetch("/hls/high.m3u8").then(r=>r.text())`); // the player moves on to a child playlist
+  await sleep(1500);
+  check("child playlist isn't listed twice", (await jsS(`${panel}.querySelectorAll(".row").length`)) === 1);
+  await jsS(`(() => { const s = ${panel}.querySelector("select"); s.value = "360p-800000"; s.dispatchEvent(new Event("change")); ${panel}.querySelector(".get").click(); })()`);
+  await sleep(2500);
+  const fromStream = received.find((m) => (m.url || "").includes("master.m3u8"));
+  check("chosen quality reaches Haul", !!fromStream && fromStream.stream === "hls" && fromStream.variant === "360p-800000" && fromStream.confirm === true, JSON.stringify(fromStream));
+
+  // Protected stream: named, but nothing to press.
+  const locked = await send("Target.createTarget", { url: `${base}/streampage` });
+  const lockedSession = (await send("Target.attachToTarget", { targetId: locked.targetId, flatten: true })).sessionId;
+  const jsL = async (expression) => (await send("Runtime.evaluate", { expression, awaitPromise: true, returnByValue: true }, lockedSession)).result.value;
+  await sleep(1000);
+  await jsL(`fetch("/hls/high.m3u8?enc=key").then(r=>r.text())`);
+  let lockedText = "";
+  for (let i = 0; i < 40 && !lockedText.includes("Protected"); i++) {
+    await sleep(250);
+    lockedText = (await jsL(`${panel}?.textContent ?? ""`)) || "";
+  }
+  check("encrypted stream is named and offers no download", lockedText.includes("Protected video"));
 } catch (e) { check("run", false, e.message); }
 chrome.kill(); setTimeout(() => process.exit(), 300);

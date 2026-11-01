@@ -1,8 +1,10 @@
 #pragma once
 
 #include "app/InstanceGuard.h"
+#include "media/StreamResolver.h"
 
 #include <QByteArray>
+#include <QJsonObject>
 #include <QString>
 #include <QStringList>
 
@@ -21,6 +23,11 @@ bool isAllowedBrowserCaller(const QStringList &arguments);
 
 // Parses {"type":"add","url":"...","filename":"..."} into a command that opens the Add dialog.
 bool parseBrowserMessage(const QByteArray &json, IpcCommand *command, QString *error);
+
+// {"type":"inspect","url":...} asks what qualities a video stream offers, so the browser panel
+// can show them using this same parser. The answer never contains a login or a key.
+bool isInspectMessage(const QByteArray &json, QUrl *url, QByteArray *referer);
+QJsonObject describeStream(const StreamInfo &info);
 
 QByteArray nativeHostManifest(const QString &hostPath, bool firefox);
 

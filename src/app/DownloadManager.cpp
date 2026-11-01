@@ -4,6 +4,7 @@
 #include "core/FileNameUtils.h"
 #include "core/SegmentPlan.h"
 #include "core/UrlValidator.h"
+#include "media/StreamResolver.h"
 #include "scheduler/DownloadQueue.h"
 #include "storage/DownloadRepository.h"
 
@@ -147,6 +148,8 @@ void DownloadManager::deletePartialFiles(const DownloadTask &task)
     QFile::remove(task.partPath());
     for (int i = 0; i < kMaxSegments; ++i)
         QFile::remove(task.segmentPath(i));
+    if (task.isStream())
+        QDir(task.streamDirectory()).removeRecursively();
 }
 
 // ---------------------------------------------------------------- startup
@@ -207,6 +210,17 @@ qint64 DownloadManager::addDownload(const AddRequest &request, QString *error)
 
     QString name = request.fileName.trimmed().isEmpty() ? fileNameFromUrl(check.url)
                                                         : sanitizeFileName(request.fileName);
+    const StreamKind kind = request.streamKind != StreamKind::File ? request.streamKind : streamKindForUrl(check.url);
+    if (kind != StreamKind::File) {
+        if (isFtpUrl(check.url))
+            return fail(QStringLiteral("Streams can only be downloaded over http or https."));
+        // "master.m3u8" describes the manifest, not the video we will produce.
+        if (name.endsWith(QLatin1String(".m3u8"), Qt::CaseInsensitive) || name.endsWith(QLatin1String(".m3u"), Qt::CaseInsensitive)
+            || name.endsWith(QLatin1String(".mpd"), Qt::CaseInsensitive))
+            name = name.left(name.lastIndexOf(QLatin1Char('.')));
+        if (QFileInfo(name).suffix().isEmpty())
+            name += QStringLiteral(".mp4");
+    }
     name = uniqueFileName(directory, name, reservedNames(directory));
 
     QVector<QueueEntry> entries;
@@ -217,7 +231,10 @@ qint64 DownloadManager::addDownload(const AddRequest &request, QString *error)
     task.url = url;
     task.directory = directory;
     task.fileName = name;
-    task.autoName = request.fileName.trimmed().isEmpty();
+    task.autoName = kind == StreamKind::File && request.fileName.trimmed().isEmpty();
+    task.streamKind = kind;
+    task.streamVariant = request.streamVariant;
+    task.streamLabel = request.streamLabel;
     task.state = TaskState::Queued;
     task.priority = request.priority;
     task.queuePosition = DownloadQueue::nextPosition(entries);
@@ -506,6 +523,7 @@ bool DownloadManager::startTask(DownloadTask &task)
     connect(transfer.thread, &QThread::started, transfer.worker, &DownloadWorker::run);
     connect(transfer.worker, &DownloadWorker::metadataReady, this, &DownloadManager::onMetadata);
     connect(transfer.worker, &DownloadWorker::progress, this, &DownloadManager::onProgress);
+    connect(transfer.worker, &DownloadWorker::streamProgress, this, &DownloadManager::onStreamProgress);
     connect(transfer.worker, &DownloadWorker::finished, this, &DownloadManager::onFinished);
     connect(transfer.thread, &QThread::finished, transfer.worker, &QObject::deleteLater);
     connect(transfer.thread, &QThread::finished, transfer.thread, &QObject::deleteLater);
@@ -571,6 +589,14 @@ void DownloadManager::onProgress(qint64 taskId, qint64 downloaded, qint64 total,
     emit taskUpdated(taskId);
 }
 
+void DownloadManager::onStreamProgress(qint64 taskId, int piecesDone, int piecesTotal)
+{
+    if (DownloadTask *t = find(taskId)) {
+        t->streamPiecesDone = piecesDone;
+        t->streamPiecesTotal = piecesTotal;
+    }
+}
+
 void DownloadManager::onFinished(WorkerOutcome outcome)
 {
     const qint64 id = outcome.task.id;
@@ -598,6 +624,9 @@ void DownloadManager::onFinished(WorkerOutcome outcome)
     t->acceptRanges = outcome.task.acceptRanges;
     t->segments = outcome.task.segments;
     t->checksumStatus = outcome.task.checksumStatus;
+    t->streamLabel = outcome.task.streamLabel;
+    t->streamPiecesDone = outcome.task.streamPiecesDone;
+    t->streamPiecesTotal = outcome.task.streamPiecesTotal;
     t->speed = 0.0;
 
     const TransferError &error = outcome.error;

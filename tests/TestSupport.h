@@ -41,8 +41,13 @@ inline QByteArray readFile(const QString &path)
 class TestServer
 {
 public:
-    bool start()
+    bool start(const QString &staticDirectory = QString())
     {
+        if (!staticDirectory.isEmpty()) {
+            QProcessEnvironment env = QProcessEnvironment::systemEnvironment();
+            env.insert(QStringLiteral("HAUL_STATIC_DIR"), staticDirectory);
+            m_process.setProcessEnvironment(env);
+        }
         m_process.setProgram(QStringLiteral(HAUL_PYTHON));
         m_process.setArguments({ QStringLiteral("-I"), QStringLiteral(HAUL_TEST_SERVER) });
         m_process.start();

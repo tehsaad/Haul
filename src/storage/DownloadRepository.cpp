@@ -1,6 +1,7 @@
 #include "DownloadRepository.h"
 
 #include "core/SegmentPlan.h"
+#include "media/StreamDownloader.h"
 
 #include <QFileInfo>
 #include <QHash>
@@ -36,8 +37,8 @@ bool DownloadRepository::insert(DownloadTask &task)
     Statement s(m_db.handle(),
                 "INSERT INTO downloads (url, directory, file_name, status, priority, queue_position, total_bytes,"
                 " downloaded, etag, last_modified, accept_ranges, retry_count, error, interrupted, expected_sha256,"
-                " checksum_status, created_at, started_at, completed_at, auto_name)"
-                " VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)");
+                " checksum_status, created_at, started_at, completed_at, auto_name, stream_kind, stream_variant, stream_label)"
+                " VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)");
     if (!s.isValid())
         return false;
     s.bind(1, task.url);
@@ -60,6 +61,9 @@ bool DownloadRepository::insert(DownloadTask &task)
     bindTimestamp(s, 18, task.startedAt);
     bindTimestamp(s, 19, task.completedAt);
     s.bind(20, task.autoName ? 1 : 0);
+    s.bind(21, static_cast<int>(task.streamKind));
+    s.bind(22, task.streamVariant);
+    s.bind(23, task.streamLabel);
     if (!s.execute())
         return false;
     task.id = m_db.lastInsertId();
@@ -75,7 +79,7 @@ bool DownloadRepository::update(const DownloadTask &task)
                 "UPDATE downloads SET url=?, directory=?, file_name=?, status=?, priority=?, queue_position=?,"
                 " total_bytes=?, downloaded=?, etag=?, last_modified=?, accept_ranges=?, retry_count=?, error=?,"
                 " interrupted=?, expected_sha256=?, checksum_status=?, created_at=?, started_at=?, completed_at=?,"
-                " auto_name=? WHERE id=?");
+                " auto_name=?, stream_kind=?, stream_variant=?, stream_label=? WHERE id=?");
     s.bind(1, task.url);
     s.bind(2, task.directory);
     s.bind(3, task.fileName);
@@ -96,7 +100,10 @@ bool DownloadRepository::update(const DownloadTask &task)
     bindTimestamp(s, 18, task.startedAt);
     bindTimestamp(s, 19, task.completedAt);
     s.bind(20, task.autoName ? 1 : 0);
-    s.bind(21, task.id);
+    s.bind(21, static_cast<int>(task.streamKind));
+    s.bind(22, task.streamVariant);
+    s.bind(23, task.streamLabel);
+    s.bind(24, task.id);
 
     if (!s.isValid() || !s.execute() || !writeSegments(task) || !m_db.commit()) {
         m_db.rollback();
@@ -163,7 +170,7 @@ QVector<DownloadTask> DownloadRepository::loadAll()
     Statement s(m_db.handle(),
                 "SELECT id, url, directory, file_name, status, priority, queue_position, total_bytes, downloaded,"
                 " etag, last_modified, accept_ranges, retry_count, error, interrupted, expected_sha256,"
-                " checksum_status, created_at, started_at, completed_at, auto_name FROM downloads ORDER BY id");
+                " checksum_status, created_at, started_at, completed_at, auto_name, stream_kind, stream_variant, stream_label FROM downloads ORDER BY id");
     while (s.next()) {
         DownloadTask task;
         task.id = s.int64(0);
@@ -187,6 +194,9 @@ QVector<DownloadTask> DownloadRepository::loadAll()
         task.startedAt = readTimestamp(s, 18);
         task.completedAt = readTimestamp(s, 19);
         task.autoName = s.int64(20) != 0;
+        task.streamKind = static_cast<StreamKind>(static_cast<int>(qBound(qint64(0), s.int64(21), qint64(2))));
+        task.streamVariant = s.text(22);
+        task.streamLabel = s.text(23);
         indexById.insert(task.id, tasks.size());
         tasks.append(task);
     }
@@ -222,7 +232,9 @@ int applyStartupRecovery(QVector<DownloadTask> &tasks)
 
         // The database may lag behind the disk (progress is saved about once a second),
         // so the files are the source of truth.
-        if (!task.segments.isEmpty()) {
+        if (task.isStream()) {
+            task.downloadedBytes = streamBytesOnDisk(task.streamDirectory());
+        } else if (!task.segments.isEmpty()) {
             for (SegmentInfo &segment : task.segments) {
                 const qint64 size = QFileInfo(task.segmentPath(segment.index)).size();
                 segment.downloaded = qBound<qint64>(0, size, segment.length());
