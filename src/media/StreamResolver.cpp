@@ -5,6 +5,7 @@
 #include "core/UrlValidator.h"
 
 #include <QCryptographicHash>
+#include <QHash>
 #include <QHostAddress>
 
 #include <algorithm>
@@ -216,6 +217,18 @@ QVector<StreamVariant> dashVariants(const DashManifest &manifest, const DashRepr
 
 } // namespace
 
+static void nameVariants(QVector<StreamVariant> &variants)
+{
+    QHash<QString, int> counts;
+    for (const StreamVariant &variant : variants)
+        ++counts[variant.label()];
+    for (StreamVariant &variant : variants) {
+        variant.displayName = variant.label();
+        if (counts.value(variant.label()) > 1 && variant.bandwidth > 0)
+            variant.displayName += QStringLiteral(" (%1 kbps)").arg(variant.bandwidth / 1000);
+    }
+}
+
 StreamKind streamKindForUrl(const QUrl &url)
 {
     const QString path = url.path().toLower();
@@ -278,6 +291,7 @@ StreamInfo inspectStream(const QUrl &url, const NetworkOptions &options, const s
                 return info;
             StreamVariant only;
             only.id = QStringLiteral("default");
+            only.displayName = only.label();
             info.duration = mediaDuration(media);
             info.variants.append(only);
             info.ok = true;
@@ -308,6 +322,7 @@ StreamInfo inspectStream(const QUrl &url, const NetworkOptions &options, const s
                 variant.estimatedBytes = static_cast<qint64>(variant.bandwidth * info.duration / 8);
         }
         info.variants = master.variants;
+        nameVariants(info.variants);
         info.ok = true;
         return info;
     }
@@ -329,6 +344,7 @@ StreamInfo inspectStream(const QUrl &url, const NetworkOptions &options, const s
             info.error = encryptedError(); // every representation carried ContentProtection
             return info;
         }
+        nameVariants(info.variants);
         info.duration = manifest.duration;
         info.ok = true;
         return info;

@@ -397,7 +397,7 @@ void AddDownloadDialog::showStream(const StreamInfo &stream, const QString &sugg
         const QSignalBlocker blocker(m_quality);
         m_quality->clear();
         for (const StreamVariant &variant : stream.variants)
-            m_quality->addItem(variant.label(), variant.id);
+            m_quality->addItem(variant.displayName, variant.id);
         const int preferred = m_quality->findData(m_preferredVariant);
         m_quality->setCurrentIndex(preferred >= 0 ? preferred : 0);
     }
