@@ -9,7 +9,7 @@ on:
 
 env:
   QT_VERSION: "6.8.3"
-  HAUL_VERSION: "0.2.1"
+  HAUL_VERSION: "0.3.0"
 
 jobs:
   windows:
@@ -50,6 +50,10 @@ jobs:
 
       - name: Build
         run: cmake --build --preset windows-msvc
+
+      - name: Install FFmpeg for the media tests
+        shell: pwsh
+        run: choco install ffmpeg -y --no-progress
 
       - name: Test
         run: ctest --preset windows-msvc
