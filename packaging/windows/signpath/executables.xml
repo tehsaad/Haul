@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- SignPath artifact configuration "executables": only Haul's own programs are signed.
+     Qt and other library DLLs are not ours to sign. -->
+<artifact-configuration xmlns="http://signpath.io/artifact-configuration/v1">
+  <parameters>
+    <parameter name="version" required="true" />
+  </parameters>
+  <zip-file>
+    <pe-file path="haul.exe" product-name="Haul" product-version="${version}">
+      <authenticode-sign />
+    </pe-file>
+    <pe-file path="haul-native-host.exe" product-name="Haul" product-version="${version}">
+      <authenticode-sign />
+    </pe-file>
+  </zip-file>
+</artifact-configuration>

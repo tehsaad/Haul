@@ -15,11 +15,11 @@ BEGIN
         BLOCK "040904B0"
         BEGIN
             VALUE "CompanyName",      "Haul contributors"
-            VALUE "FileDescription",  "Haul download manager"
+            VALUE "FileDescription",  "@HAUL_FILE_DESCRIPTION@"
             VALUE "FileVersion",      "@PROJECT_VERSION@"
-            VALUE "InternalName",     "haul"
+            VALUE "InternalName",     "@HAUL_FILE_NAME@"
             VALUE "LegalCopyright",   "Apache License 2.0"
-            VALUE "OriginalFilename", "haul.exe"
+            VALUE "OriginalFilename", "@HAUL_FILE_NAME@.exe"
             VALUE "ProductName",      "Haul"
             VALUE "ProductVersion",   "@PROJECT_VERSION@"
         END

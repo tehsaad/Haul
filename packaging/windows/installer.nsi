@@ -27,6 +27,7 @@ VIProductVersion "${VERSION}.0"
 VIAddVersionKey "ProductName" "${APPNAME}"
 VIAddVersionKey "FileDescription" "${APPNAME} installer"
 VIAddVersionKey "FileVersion" "${VERSION}"
+VIAddVersionKey "ProductVersion" "${VERSION}"
 VIAddVersionKey "LegalCopyright" "Apache License 2.0"
 
 !define MUI_ICON "haul.ico"
@@ -36,6 +37,12 @@ VIAddVersionKey "LegalCopyright" "Apache License 2.0"
 
 !insertmacro MUI_PAGE_WELCOME
 !insertmacro MUI_PAGE_LICENSE "..\..\LICENSE"
+!define MUI_PAGE_HEADER_TEXT "Privacy"
+!define MUI_PAGE_HEADER_SUBTEXT "What Haul contacts, and how to turn it off."
+!define MUI_LICENSEPAGE_TEXT_TOP "Please read how Haul handles your information."
+!define MUI_LICENSEPAGE_TEXT_BOTTOM " "
+!define MUI_LICENSEPAGE_BUTTON "$(^NextBtn)"
+!insertmacro MUI_PAGE_LICENSE "..\..\docs\PRIVACY.md"
 !insertmacro MUI_PAGE_DIRECTORY
 !insertmacro MUI_PAGE_INSTFILES
 !insertmacro MUI_PAGE_FINISH

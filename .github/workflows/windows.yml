@@ -66,6 +66,32 @@ jobs:
         shell: pwsh
         run: pwsh packaging/windows/stage.ps1 -BuildDir build/windows-msvc -StageDir "$pwd\stage"
 
+      # Signing is skipped until SignPath is set up: see packaging/windows/SIGNING.md.
+      - name: Upload programs for signing
+        id: unsigned-programs
+        if: ${{ vars.SIGNPATH_ORGANIZATION_ID != '' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: unsigned-programs
+          path: |
+            stage/bin/haul.exe
+            stage/bin/haul-native-host.exe
+
+      - name: Sign programs
+        if: ${{ vars.SIGNPATH_ORGANIZATION_ID != '' }}
+        uses: signpath/github-action-submit-signing-request@v3
+        with:
+          api-token: ${{ secrets.SIGNPATH_API_TOKEN }}
+          organization-id: ${{ vars.SIGNPATH_ORGANIZATION_ID }}
+          project-slug: haul
+          signing-policy-slug: release-signing
+          artifact-configuration-slug: executables
+          github-artifact-id: ${{ steps.unsigned-programs.outputs.artifact-id }}
+          wait-for-completion: true
+          output-artifact-directory: stage/bin
+          parameters: |
+            version: "${{ env.HAUL_VERSION }}"
+
       - name: Build installer (NSIS)
         shell: pwsh
         run: |
@@ -78,6 +104,37 @@ jobs:
                    /DOUTFILE="$pwd\Haul-$env:HAUL_VERSION-Setup.exe" packaging\windows\installer.nsi
           if ($LASTEXITCODE -ne 0) { exit 1 }
           Get-Item "Haul-$env:HAUL_VERSION-Setup.exe" | Format-List Name, Length
+
+      - name: Upload installer for signing
+        id: unsigned-installer
+        if: ${{ vars.SIGNPATH_ORGANIZATION_ID != '' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: unsigned-installer
+          path: Haul-${{ env.HAUL_VERSION }}-Setup.exe
+
+      - name: Sign installer
+        if: ${{ vars.SIGNPATH_ORGANIZATION_ID != '' }}
+        uses: signpath/github-action-submit-signing-request@v3
+        with:
+          api-token: ${{ secrets.SIGNPATH_API_TOKEN }}
+          organization-id: ${{ vars.SIGNPATH_ORGANIZATION_ID }}
+          project-slug: haul
+          signing-policy-slug: release-signing
+          artifact-configuration-slug: installer
+          github-artifact-id: ${{ steps.unsigned-installer.outputs.artifact-id }}
+          wait-for-completion: true
+          output-artifact-directory: .
+          parameters: |
+            version: "${{ env.HAUL_VERSION }}"
+
+      - name: Check signatures
+        if: ${{ vars.SIGNPATH_ORGANIZATION_ID != '' }}
+        shell: pwsh
+        run: |
+          $setup = Get-AuthenticodeSignature "Haul-$env:HAUL_VERSION-Setup.exe"
+          $setup | Format-List Status, StatusMessage, SignerCertificate
+          if ($setup.Status -ne 'Valid') { throw "the installer signature is not valid" }
 
       - name: Smoke test the installed application
         shell: pwsh
