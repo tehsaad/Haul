@@ -33,6 +33,7 @@ public:
 
     void setUrl(const QString &url);
     void setFileName(const QString &name);
+    void setReferrer(const QString &referrer);
     qint64 createdTaskId() const { return m_createdId; }
 
 private:
@@ -75,6 +76,7 @@ private:
     QFutureWatcher<ProbeResult> m_watcher;
     std::shared_ptr<std::atomic_bool> m_probeCancel;
     QString m_inspectedUrl;
+    QString m_referrer;
     bool m_nameEditedByUser = false;
     bool m_probeFailedPermanently = false;
     qint64 m_createdId = 0;

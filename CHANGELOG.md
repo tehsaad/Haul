@@ -2,6 +2,19 @@
 
 All notable changes to Haul are documented here (format: [Keep a Changelog](https://keepachangelog.com/)).
 
+## [0.2.1] — unreleased
+
+### Fixed
+- Ticking **Allow the browser extension** and pressing Save unticked the box and registered nothing, so the extension could never reach Haul.
+
+### Changed
+- Browser downloads now go to Haul automatically (can be turned off in the extension's popup). If Haul can't be reached, the download continues in the browser.
+
+### Added
+- A panel on pages that play an ordinary video or audio file, with a Download button.
+- Sends the address of the site a link came from, because some servers refuse downloads without it.
+- `tests/browser/e2e.mjs`: drives real Chrome through the extension and the native host.
+
 ## [0.2.0] — unreleased
 
 ### Changed

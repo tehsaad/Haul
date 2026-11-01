@@ -55,6 +55,10 @@ These were recorded on **2026-10-24** on Ubuntu 26.04 (x86_64, g++ 15.2, Qt 6.10
 
 **Measured worst gap: 14 ms** (the limit is 250 ms).
 
+## Browser extension in real Chrome
+
+`tests/browser/e2e.mjs` loads the unpacked extension into Chrome with a temporary profile, using the real `haul-native-host` and a stand-in for Haul's socket. It needs Node and Chrome. Run on 2026-11-01 with Chrome 156: extension id matches the host, panel appears by itself on a page with a video, its button reaches Haul with `confirm: true`, a browser download is taken over, and only the site's origin is sent. All 6 checks passed.
+
 ## Segmented download benchmark
 
 The tool is `tools/bench_segments.cpp`. It was run in a Release build against the local test server on 2026-10-24:

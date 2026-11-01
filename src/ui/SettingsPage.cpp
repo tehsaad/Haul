@@ -218,6 +218,7 @@ AppSettings SettingsPage::collect() const
 void SettingsPage::save()
 {
     const AppSettings s = collect();
+    const bool allowBrowser = m_browser->isChecked(); // saving reloads the page, so read this first
     QStringList errors;
     if (!m_settings->save(s, &errors)) {
         m_status->setText(errors.join(QLatin1Char('\n')));
@@ -231,14 +232,18 @@ void SettingsPage::save()
         return;
     }
     QString browserError;
-    if (platform::isBrowserIntegrationEnabled() != m_browser->isChecked()
-        && !platform::setBrowserIntegrationEnabled(m_browser->isChecked(), &browserError)) {
+    const bool wasAllowed = platform::isBrowserIntegrationEnabled();
+    const bool changed = wasAllowed != allowBrowser;
+    if (changed && !platform::setBrowserIntegrationEnabled(allowBrowser, &browserError)) {
         m_browser->setChecked(platform::isBrowserIntegrationEnabled());
         m_status->setText(browserError);
         setRole(m_status, QStringLiteral("warning"));
         return;
     }
-    m_status->setText(QStringLiteral("Saved."));
+    m_browser->setChecked(allowBrowser);
+    m_status->setText(!changed ? QStringLiteral("Saved.")
+                      : allowBrowser ? QStringLiteral("Saved. The browser extension can now send downloads to Haul.")
+                                     : QStringLiteral("Saved. The browser extension can no longer reach Haul."));
     setRole(m_status, QStringLiteral("success"));
 }
 

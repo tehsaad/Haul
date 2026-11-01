@@ -1,4 +1,6 @@
 const api = globalThis.browser ?? globalThis.chrome;
-const box = document.getElementById("capture");
-api.storage.local.get("capture").then(({ capture }) => { box.checked = !!capture; });
-box.addEventListener("change", () => api.storage.local.set({ capture: box.checked }));
+for (const key of ["capture", "panel"]) {
+  const box = document.getElementById(key);
+  api.storage.local.get(key).then((stored) => { box.checked = stored[key] !== false; }); // both default to on
+  box.addEventListener("change", () => api.storage.local.set({ [key]: box.checked }));
+}

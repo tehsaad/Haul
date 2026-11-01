@@ -207,9 +207,9 @@ void MainWindow::bringToFront()
     activateWindow();
 }
 
-void MainWindow::askAboutDownload(const QString &url, const QString &fileName)
+void MainWindow::askAboutDownload(const QString &url, const QString &fileName, const QString &referrer)
 {
-    m_pendingLinks.append({ url, fileName });
+    m_pendingLinks.append({ url, fileName, referrer });
     if (m_pendingLinks.size() == 1) // otherwise the loop below is already showing a dialog
         QTimer::singleShot(0, this, &MainWindow::showNextPendingLink);
 }
@@ -223,19 +223,20 @@ void MainWindow::showNextPendingLink()
         return;
     }
     bringToFront();
-    const QPair<QString, QString> link = m_pendingLinks.first();
-    openAddDialog(link.first, link.second);
+    const PendingLink link = m_pendingLinks.first();
+    openAddDialog(link.url, link.fileName, link.referrer);
     m_pendingLinks.removeFirst();
     showNextPendingLink();
 }
 
-qint64 MainWindow::openAddDialog(const QString &url, const QString &fileName)
+qint64 MainWindow::openAddDialog(const QString &url, const QString &fileName, const QString &referrer)
 {
     AddDownloadDialog dialog(m_manager, m_settings, this);
     if (!url.isEmpty())
         dialog.setUrl(url);
     if (!fileName.isEmpty())
         dialog.setFileName(fileName);
+    dialog.setReferrer(referrer);
     if (dialog.exec() != QDialog::Accepted)
         return 0;
     if (const DownloadTask *t = m_manager->task(dialog.createdTaskId())) {
