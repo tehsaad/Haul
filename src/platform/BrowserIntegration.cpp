@@ -71,7 +71,7 @@ QJsonObject describeStream(const StreamInfo &info)
         const StreamVariant &variant = info.variants[i];
         QJsonObject v;
         v["id"] = variant.id;
-        v["label"] = variant.label();
+        v["label"] = variant.displayName;
         v["size"] = static_cast<double>(variant.estimatedBytes);
         variants.append(v);
     }

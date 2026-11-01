@@ -329,6 +329,23 @@ private slots:
         QVERIFY2(info.error.message.contains(expected), qPrintable(info.error.message));
     }
 
+    void sameLabelsGetBitratesToTellThemApart()
+    {
+        QFile mpd(fixtures.filePath("same.mpd"));
+        QVERIFY(mpd.open(QIODevice::WriteOnly));
+        mpd.write(R"(<MPD type="static" mediaPresentationDuration="PT8S"><Period><AdaptationSet contentType="video" mimeType="video/mp4">
+            <Representation id="a" bandwidth="5000000" height="1080"><BaseURL>a.mp4</BaseURL></Representation>
+            <Representation id="b" bandwidth="3000000" height="1080"><BaseURL>b.mp4</BaseURL></Representation>
+            <Representation id="c" bandwidth="1000000" height="720"><BaseURL>c.mp4</BaseURL></Representation>
+            </AdaptationSet></Period></MPD>)");
+        mpd.close();
+        const StreamInfo info = inspectStream(QUrl(server.url("/static/same.mpd")), NetworkOptions());
+        QVERIFY2(info.ok, qPrintable(info.error.message));
+        QCOMPARE(info.variants[0].displayName, QString("1080p (5000 kbps)"));
+        QCOMPARE(info.variants[1].displayName, QString("1080p (3000 kbps)"));
+        QCOMPARE(info.variants[2].displayName, QString("720p"));
+    }
+
     void ordinaryFilesAreNotStreams()
     {
         const StreamInfo info = inspectStream(QUrl(server.url("/file/5000")), NetworkOptions());
