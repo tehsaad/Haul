@@ -136,8 +136,8 @@ FFmpeg runs as a separate program instead of being linked. That keeps the downlo
 Three layers, from cheapest to most certain:
 
 1. **`browser/detector.js`** classifies each response from `webRequest` headers. It is a pure function, tested with `node --test` and no browser. It decides on status, MIME type, `Content-Disposition`, request type and size, and rejects non-media and stream pieces.
-2. **`browser/content.js`** adds `<video>`, `<audio>` and links on the page, reads duration and resolution from playing elements, removes duplicates, and shows the indicator and panel.
-3. **`media/MediaSniffer`** identifies a file from its first bytes. It runs through the native host's `verify` message when the panel opens, so ordinary browsing causes no extra requests.
+2. **`browser/content.js`** adds `<video>`, `<audio>` and links on the page, reads duration and resolution from playing elements, removes duplicates, and shows the pop-up list, the indicator and the button on the video.
+3. **`media/MediaSniffer`** identifies a file from its first bytes. It runs through the native host's `verify` message after a click or hover on the list, so a list that merely pops up causes no extra requests.
 
 `background.js` keeps a per-tab list in `storage.session`, because Manifest V3 can stop the worker at any time. Downloads leave through the same `add` message as before, so all manager features apply.
 

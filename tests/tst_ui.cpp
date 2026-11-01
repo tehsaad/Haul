@@ -260,6 +260,23 @@ private slots:
     }
 #endif
 
+    void linksFromTheBrowserOpenAboveOtherWindows()
+    {
+        // The dialog runs its own loop, so look at it from a timer inside that loop.
+        bool sawDialog = false;
+        bool onTop = false;
+        QTimer::singleShot(500, this, [&] {
+            if (auto *dialog = qobject_cast<ui::AddDownloadDialog *>(QApplication::activeModalWidget())) {
+                sawDialog = true;
+                onTop = dialog->windowFlags() & Qt::WindowStaysOnTopHint;
+                dialog->reject();
+            }
+        });
+        window->askAboutDownload(server.url("/m/popup.mp4"), QString());
+        QTRY_VERIFY_WITH_TIMEOUT(sawDialog, 5000);
+        QVERIFY(onTop);
+    }
+
     void addDialogOffersStreamQualities()
     {
         ui::AddDownloadDialog dialog(manager.get(), settings.get());

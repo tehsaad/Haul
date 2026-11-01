@@ -224,14 +224,16 @@ void MainWindow::showNextPendingLink()
     }
     bringToFront();
     const PendingLink link = m_pendingLinks.first();
-    openAddDialog(link.url, link.fileName, link.referrer, link.variant);
+    openAddDialog(link.url, link.fileName, link.referrer, link.variant, true);
     m_pendingLinks.removeFirst();
     showNextPendingLink();
 }
 
-qint64 MainWindow::openAddDialog(const QString &url, const QString &fileName, const QString &referrer, const QString &variant)
+qint64 MainWindow::openAddDialog(const QString &url, const QString &fileName, const QString &referrer, const QString &variant, bool stayOnTop)
 {
     AddDownloadDialog dialog(m_manager, m_settings, this);
+    if (stayOnTop) // the user is in the browser: this has to appear in front of it
+        dialog.setWindowFlag(Qt::WindowStaysOnTopHint);
     dialog.setPreferredVariant(variant);
     if (!url.isEmpty())
         dialog.setUrl(url);
