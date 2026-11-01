@@ -27,6 +27,7 @@ This document lists the user-visible features of Internet Download Manager (IDM)
 | 14 | File integrity | Verify downloaded files. | Optional SHA-256 from a **trusted** source. The result is shown as *Verified*, *Mismatch* or *Not verified*. A hash computed locally alone is never presented as proof. | MD5 and SHA-1 are deliberately not offered. | `tst_network::workerVerifiesChecksum`, `workerReportsChecksumMismatch` |
 | 15 | Error reporting | Clear messages when something fails. | Every error has plain-language text (for example "HTTP 404 Not Found: the file does not exist at this address"). It appears in notifications, tooltips and the Details page. | — | `tst_network::httpErrorsAreClassified` |
 | 16 | Browser integration | A browser extension hands downloads to the manager. | Extension for Chromium browsers and Firefox using native messaging; links open the Add dialog first. Design in `docs/SECURITY.md`. | Not in the browser stores yet; snap browsers may block native messaging. | `tst_instance` |
+| 17 | Video detection | A panel offers video found on a page. | Generic detection of files and unencrypted HLS and DASH manifests, with quality selection. No per-site logic. | Encrypted and live streams, YouTube and multi-period DASH are not supported. | `tst_media`, `tests/browser/e2e.mjs` |
 
 Features that IDM describes and that Haul deliberately leaves out:
 
@@ -34,4 +35,3 @@ Features that IDM describes and that Haul deliberately leaves out:
 * the site grabber or spider;
 * any DRM, login or paywall circumvention;
 * torrents.
-| 17 | Video detection | A panel offers video found on a page. | Generic detection of files and unencrypted HLS and DASH manifests, with quality selection. No per-site logic. | Encrypted and live streams, YouTube and multi-period DASH are not supported. | `tst_media`, `tests/browser/e2e.mjs` |
