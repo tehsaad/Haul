@@ -1,4 +1,4 @@
-# Assembles a self-contained OpenLoad folder ready for the installer.
+# Assembles a self-contained Haul folder ready for the installer.
 #   pwsh packaging/windows/stage.ps1 -BuildDir build/windows-msvc -StageDir stage
 param(
     [Parameter(Mandatory)] [string] $BuildDir,
@@ -12,7 +12,7 @@ $bin = Join-Path $StageDir "bin"
 
 # Qt libraries and plugins (platforms, styles, imageformats incl. SVG, iconengines).
 windeployqt --release --no-translations --no-system-d3d-compiler --no-opengl-sw `
-            --compiler-runtime (Join-Path $bin "openload.exe")
+            --compiler-runtime (Join-Path $bin "haul.exe")
 if ($LASTEXITCODE -ne 0) { throw "windeployqt failed" }
 
 # windeployqt does not know about libcurl, SQLite or their dependencies (zlib, ...).

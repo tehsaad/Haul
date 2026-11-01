@@ -1,5 +1,5 @@
-; OpenLoad installer (NSIS 3, Modern UI 2)
-;   makensis /DVERSION=0.1.0 /DSTAGE=..\..\stage /DOUTFILE=OpenLoad-0.1.0-Setup.exe installer.nsi
+; Haul installer (NSIS 3, Modern UI 2)
+;   makensis /DVERSION=0.1.0 /DSTAGE=..\..\stage /DOUTFILE=Haul-0.1.0-Setup.exe installer.nsi
 
 Unicode true
 !include "MUI2.nsh"
@@ -11,11 +11,11 @@ Unicode true
   !define STAGE "..\..\stage"
 !endif
 !ifndef OUTFILE
-  !define OUTFILE "OpenLoad-${VERSION}-Setup.exe"
+  !define OUTFILE "Haul-${VERSION}-Setup.exe"
 !endif
 
-!define APPNAME "OpenLoad"
-!define UNINSTKEY "Software\Microsoft\Windows\CurrentVersion\Uninstall\OpenLoad"
+!define APPNAME "Haul"
+!define UNINSTKEY "Software\Microsoft\Windows\CurrentVersion\Uninstall\Haul"
 
 Name "${APPNAME} ${VERSION}"
 OutFile "${OUTFILE}"
@@ -29,10 +29,10 @@ VIAddVersionKey "FileDescription" "${APPNAME} installer"
 VIAddVersionKey "FileVersion" "${VERSION}"
 VIAddVersionKey "LegalCopyright" "MIT License"
 
-!define MUI_ICON "openload.ico"
-!define MUI_UNICON "openload.ico"
+!define MUI_ICON "haul.ico"
+!define MUI_UNICON "haul.ico"
 !define MUI_ABORTWARNING
-!define MUI_FINISHPAGE_RUN "$INSTDIR\bin\openload.exe"
+!define MUI_FINISHPAGE_RUN "$INSTDIR\bin\haul.exe"
 
 !insertmacro MUI_PAGE_WELCOME
 !insertmacro MUI_PAGE_LICENSE "..\..\LICENSE"
@@ -43,7 +43,7 @@ VIAddVersionKey "LegalCopyright" "MIT License"
 !insertmacro MUI_UNPAGE_INSTFILES
 !insertmacro MUI_LANGUAGE "English"
 
-Section "OpenLoad" SecMain
+Section "Haul" SecMain
   SectionIn RO
   ; Upgrade: remove the previous program files first (user data lives in %APPDATA% and is kept).
   RMDir /r "$INSTDIR\bin"
@@ -56,22 +56,26 @@ Section "OpenLoad" SecMain
   WriteUninstaller "$INSTDIR\Uninstall.exe"
 
   CreateDirectory "$SMPROGRAMS\${APPNAME}"
-  CreateShortcut "$SMPROGRAMS\${APPNAME}\${APPNAME}.lnk" "$INSTDIR\bin\openload.exe"
+  CreateShortcut "$SMPROGRAMS\${APPNAME}\${APPNAME}.lnk" "$INSTDIR\bin\haul.exe"
   CreateShortcut "$SMPROGRAMS\${APPNAME}\Uninstall ${APPNAME}.lnk" "$INSTDIR\Uninstall.exe"
 
   WriteRegStr HKLM "${UNINSTKEY}" "DisplayName" "${APPNAME}"
   WriteRegStr HKLM "${UNINSTKEY}" "DisplayVersion" "${VERSION}"
-  WriteRegStr HKLM "${UNINSTKEY}" "Publisher" "OpenLoad contributors"
-  WriteRegStr HKLM "${UNINSTKEY}" "DisplayIcon" "$INSTDIR\bin\openload.exe"
+  WriteRegStr HKLM "${UNINSTKEY}" "Publisher" "Haul contributors"
+  WriteRegStr HKLM "${UNINSTKEY}" "DisplayIcon" "$INSTDIR\bin\haul.exe"
   WriteRegStr HKLM "${UNINSTKEY}" "UninstallString" '"$INSTDIR\Uninstall.exe"'
   WriteRegStr HKLM "${UNINSTKEY}" "QuietUninstallString" '"$INSTDIR\Uninstall.exe" /S'
   WriteRegStr HKLM "${UNINSTKEY}" "InstallLocation" "$INSTDIR"
-  WriteRegStr HKLM "${UNINSTKEY}" "URLInfoAbout" "https://github.com/tehsaad/OpenLoad"
+  WriteRegStr HKLM "${UNINSTKEY}" "URLInfoAbout" "https://github.com/tehsaad/Haul"
   WriteRegDWORD HKLM "${UNINSTKEY}" "NoModify" 1
   WriteRegDWORD HKLM "${UNINSTKEY}" "NoRepair" 1
 SectionEnd
 
 Section "Uninstall"
+  DeleteRegKey HKCU "Software\Google\Chrome\NativeMessagingHosts\io.github.tehsaad.haul"
+  DeleteRegKey HKCU "Software\Microsoft\Edge\NativeMessagingHosts\io.github.tehsaad.haul"
+  DeleteRegKey HKCU "Software\BraveSoftware\Brave-Browser\NativeMessagingHosts\io.github.tehsaad.haul"
+  DeleteRegKey HKCU "Software\Mozilla\NativeMessagingHosts\io.github.tehsaad.haul"
   Delete "$SMPROGRAMS\${APPNAME}\${APPNAME}.lnk"
   Delete "$SMPROGRAMS\${APPNAME}\Uninstall ${APPNAME}.lnk"
   RMDir "$SMPROGRAMS\${APPNAME}"
@@ -80,8 +84,8 @@ Section "Uninstall"
   Delete "$INSTDIR\Uninstall.exe"
   RMDir "$INSTDIR"
   ; Launch-at-login entry, if the user enabled it in Settings.
-  DeleteRegValue HKCU "Software\Microsoft\Windows\CurrentVersion\Run" "OpenLoad"
+  DeleteRegValue HKCU "Software\Microsoft\Windows\CurrentVersion\Run" "Haul"
   DeleteRegKey HKLM "${UNINSTKEY}"
   DeleteRegKey HKLM "Software\${APPNAME}"
-  ; Downloads, history (%APPDATA%\OpenLoad) and settings (HKCU\Software\OpenLoad) are kept.
+  ; Downloads, history (%APPDATA%\Haul) and settings (HKCU\Software\Haul) are kept.
 SectionEnd

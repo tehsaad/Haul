@@ -9,7 +9,7 @@ on:
 
 env:
   QT_VERSION: "6.8.3"
-  OPENLOAD_VERSION: "0.1.0"
+  HAUL_VERSION: "0.1.0"
 
 jobs:
   windows:
@@ -66,37 +66,37 @@ jobs:
             if (-not (Test-Path "$nsis\makensis.exe")) { choco install nsis -y --no-progress }
             $env:PATH = "$nsis;$env:PATH"
           }
-          makensis /DVERSION=$env:OPENLOAD_VERSION /DSTAGE="$pwd\stage" `
-                   /DOUTFILE="$pwd\OpenLoad-$env:OPENLOAD_VERSION-Setup.exe" packaging\windows\installer.nsi
+          makensis /DVERSION=$env:HAUL_VERSION /DSTAGE="$pwd\stage" `
+                   /DOUTFILE="$pwd\Haul-$env:HAUL_VERSION-Setup.exe" packaging\windows\installer.nsi
           if ($LASTEXITCODE -ne 0) { exit 1 }
-          Get-Item "OpenLoad-$env:OPENLOAD_VERSION-Setup.exe" | Format-List Name, Length
+          Get-Item "Haul-$env:HAUL_VERSION-Setup.exe" | Format-List Name, Length
 
       - name: Smoke test the installed application
         shell: pwsh
         run: |
-          $setup = "OpenLoad-$env:OPENLOAD_VERSION-Setup.exe"
-          Start-Process -FilePath ".\$setup" -ArgumentList '/S', '/D=C:\OpenLoadTest' -Wait
-          if (-not (Test-Path 'C:\OpenLoadTest\bin\openload.exe')) { throw "openload.exe was not installed" }
+          $setup = "Haul-$env:HAUL_VERSION-Setup.exe"
+          Start-Process -FilePath ".\$setup" -ArgumentList '/S', '/D=C:\HaulTest' -Wait
+          if (-not (Test-Path 'C:\HaulTest\bin\haul.exe')) { throw "haul.exe was not installed" }
 
           # Launch the INSTALLED app; it renders every page to PNG and exits.
-          $app = Start-Process -FilePath 'C:\OpenLoadTest\bin\openload.exe' `
+          $app = Start-Process -FilePath 'C:\HaulTest\bin\haul.exe' `
                    -ArgumentList '--screenshots', "$pwd\windows-screenshots", '--screenshot-delay', '2000' -PassThru
-          if (-not $app.WaitForExit(90000)) { $app.Kill(); throw "OpenLoad did not exit in time" }
-          if ($app.ExitCode -ne 0) { throw "OpenLoad exited with code $($app.ExitCode)" }
+          if (-not $app.WaitForExit(90000)) { $app.Kill(); throw "Haul did not exit in time" }
+          if ($app.ExitCode -ne 0) { throw "Haul exited with code $($app.ExitCode)" }
           foreach ($page in 'dashboard', 'queue', 'details', 'settings') {
             if (-not (Test-Path "windows-screenshots\$page.png")) { throw "missing $page.png" }
           }
 
           # Silent uninstall (the _? argument makes the uninstaller run in place and wait).
-          Start-Process -FilePath 'C:\OpenLoadTest\Uninstall.exe' -ArgumentList '/S', '_?=C:\OpenLoadTest' -Wait
-          if (Test-Path 'C:\OpenLoadTest\bin') { throw "uninstall left program files behind" }
+          Start-Process -FilePath 'C:\HaulTest\Uninstall.exe' -ArgumentList '/S', '_?=C:\HaulTest' -Wait
+          if (Test-Path 'C:\HaulTest\bin') { throw "uninstall left program files behind" }
           Write-Host "Install, launch and uninstall succeeded."
 
       - name: Upload installer
         uses: actions/upload-artifact@v4
         with:
-          name: OpenLoad-${{ env.OPENLOAD_VERSION }}-windows-x64-installer
-          path: OpenLoad-${{ env.OPENLOAD_VERSION }}-Setup.exe
+          name: Haul-${{ env.HAUL_VERSION }}-windows-x64-installer
+          path: Haul-${{ env.HAUL_VERSION }}-Setup.exe
 
       - name: Upload screenshots from the installed app
         if: always()

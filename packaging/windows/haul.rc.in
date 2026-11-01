@@ -1,7 +1,7 @@
 // Windows resources: application icon and version information shown in Explorer.
 #include <winver.h>
 
-IDI_ICON1 ICON "@OPENLOAD_ICO@"
+IDI_ICON1 ICON "@HAUL_ICO@"
 
 VS_VERSION_INFO VERSIONINFO
 FILEVERSION     @PROJECT_VERSION_MAJOR@,@PROJECT_VERSION_MINOR@,@PROJECT_VERSION_PATCH@,0
@@ -14,13 +14,13 @@ BEGIN
     BEGIN
         BLOCK "040904B0"
         BEGIN
-            VALUE "CompanyName",      "OpenLoad contributors"
-            VALUE "FileDescription",  "OpenLoad download manager"
+            VALUE "CompanyName",      "Haul contributors"
+            VALUE "FileDescription",  "Haul download manager"
             VALUE "FileVersion",      "@PROJECT_VERSION@"
-            VALUE "InternalName",     "openload"
+            VALUE "InternalName",     "haul"
             VALUE "LegalCopyright",   "MIT License"
-            VALUE "OriginalFilename", "openload.exe"
-            VALUE "ProductName",      "OpenLoad"
+            VALUE "OriginalFilename", "haul.exe"
+            VALUE "ProductName",      "Haul"
             VALUE "ProductVersion",   "@PROJECT_VERSION@"
         END
     END
