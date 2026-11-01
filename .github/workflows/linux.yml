@@ -34,11 +34,11 @@ jobs:
           cmake --preset linux-release
           cmake --build --preset linux-release
           cd build/linux-release && cpack -G DEB
-          dpkg-deb -f openload_*.deb Package Version Depends
-          dpkg-deb -c openload_*.deb
+          dpkg-deb -f haul_*.deb Package Version Depends
+          dpkg-deb -c haul_*.deb
 
       - name: Upload package
         uses: actions/upload-artifact@v4
         with:
-          name: openload-deb-ubuntu-24.04
-          path: build/linux-release/openload_*.deb
+          name: haul-deb-ubuntu-24.04
+          path: build/linux-release/haul_*.deb

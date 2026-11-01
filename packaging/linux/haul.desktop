@@ -1,13 +1,13 @@
 [Desktop Entry]
 Type=Application
 Version=1.5
-Name=OpenLoad
+Name=Haul
 GenericName=Download Manager
 Comment=Download files with pause, resume, queues and multiple connections
-Exec=openload %U
-Icon=openload
+Exec=haul %U
+Icon=haul
 Terminal=false
 Categories=Network;FileTransfer;Qt;
 Keywords=download;manager;http;https;resume;queue;
 StartupNotify=true
-StartupWMClass=openload
+StartupWMClass=haul

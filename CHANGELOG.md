@@ -5,7 +5,7 @@ All notable changes to Haul are documented here (format: [Keep a Changelog](http
 ## [0.2.0] — unreleased
 
 ### Changed
-- Renamed the project from OpenLoad to Haul. Data now lives under the `Haul` folders; the old `OpenLoad` folders are not imported.
+- Renamed the project from Haul to Haul. Data now lives under the `Haul` folders; the old `Haul` folders are not imported.
 - Reworked the interface: warm neutral colours with one copper accent, a toolbar and dense list instead of statistic cards, a status bar, sentence-case labels and shorter wording.
 
 ### Added

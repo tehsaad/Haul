@@ -4,19 +4,19 @@
 #   cmake --build --preset linux-release
 #   cd build/linux-release && cpack -G DEB
 #
-# Produces build/linux-release/openload_<version>_<arch>.deb
+# Produces build/linux-release/haul_<version>_<arch>.deb
 
-install(FILES ${PROJECT_SOURCE_DIR}/packaging/linux/openload.desktop
+install(FILES ${PROJECT_SOURCE_DIR}/packaging/linux/haul.desktop
         DESTINATION ${CMAKE_INSTALL_DATADIR}/applications)
-install(FILES ${PROJECT_SOURCE_DIR}/assets/openload.svg
+install(FILES ${PROJECT_SOURCE_DIR}/assets/haul.svg
         DESTINATION ${CMAKE_INSTALL_DATADIR}/icons/hicolor/scalable/apps)
-install(FILES ${PROJECT_SOURCE_DIR}/packaging/linux/io.github.tehsaad.OpenLoad.metainfo.xml
+install(FILES ${PROJECT_SOURCE_DIR}/packaging/linux/io.github.tehsaad.Haul.metainfo.xml
         DESTINATION ${CMAKE_INSTALL_DATADIR}/metainfo)
 install(FILES ${PROJECT_SOURCE_DIR}/LICENSE ${PROJECT_SOURCE_DIR}/README.md
         DESTINATION ${CMAKE_INSTALL_DOCDIR})
 
-set(CPACK_PACKAGE_NAME "openload")
-set(CPACK_PACKAGE_VENDOR "OpenLoad contributors")
+set(CPACK_PACKAGE_NAME "haul")
+set(CPACK_PACKAGE_VENDOR "Haul contributors")
 set(CPACK_PACKAGE_CONTACT "Saad <tehsaad13453310@gmail.com>")
 set(CPACK_PACKAGE_VERSION ${PROJECT_VERSION})
 set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "Open-source download manager with resume, queues and multi-connection downloads")
@@ -30,7 +30,7 @@ set(CPACK_DEBIAN_PACKAGE_SECTION "net")
 set(CPACK_DEBIAN_PACKAGE_PRIORITY "optional")
 set(CPACK_DEBIAN_PACKAGE_DESCRIPTION
 "Open-source desktop download manager
- OpenLoad downloads files over HTTP and HTTPS with safe pause and resume,
+ Haul downloads files over HTTP and HTTPS with safe pause and resume,
  multi-connection (segmented) transfers, a priority queue, a daily scheduler,
  bandwidth limits, automatic retry and SHA-256 verification.")
 # Shared libraries are detected automatically by dpkg-shlibdeps; Qt plugins are loaded at

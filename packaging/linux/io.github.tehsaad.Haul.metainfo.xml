@@ -1,17 +1,17 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <component type="desktop-application">
-  <id>io.github.tehsaad.OpenLoad</id>
+  <id>io.github.tehsaad.Haul</id>
   <metadata_license>CC0-1.0</metadata_license>
   <project_license>MIT</project_license>
-  <name>OpenLoad</name>
+  <name>Haul</name>
   <summary>Download manager with resume, queues and multi-connection downloads</summary>
   <description>
-    <p>OpenLoad downloads files over HTTP and HTTPS. It resumes interrupted downloads safely,
+    <p>Haul downloads files over HTTP and HTTPS. It resumes interrupted downloads safely,
     uses several connections when the server allows it, queues and schedules downloads,
     limits bandwidth and can verify files against a SHA-256 checksum.</p>
   </description>
-  <launchable type="desktop-id">openload.desktop</launchable>
-  <url type="homepage">https://github.com/tehsaad/OpenLoad</url>
+  <launchable type="desktop-id">haul.desktop</launchable>
+  <url type="homepage">https://github.com/tehsaad/Haul</url>
   <content_rating type="oars-1.1"/>
   <releases>
     <release version="0.1.0" date="2026-10-24"/>
