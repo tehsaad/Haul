@@ -6,7 +6,11 @@
 #include "core/Checksum.h"
 #include "core/FileNameUtils.h"
 #include "core/SegmentPlan.h"
+#include "media/MediaMerger.h"
+#include "media/StreamDownloader.h"
+#include "media/StreamResolver.h"
 
+#include <QDir>
 #include <QFile>
 #include <QFileInfo>
 #include <QStorageInfo>
@@ -43,6 +47,15 @@ void DownloadWorker::run()
         outcome.note = m_note;
         emit finished(outcome);
     };
+
+    // Streams have their own path: a manifest is not the file, so nothing below applies to it.
+    if (task.isStream()) {
+        TransferError error = downloadStream(task);
+        if (!error.isError())
+            error = finalize(task);
+        finish(error);
+        return;
+    }
 
     // 1. Revalidate the remote file.
     const ProbeResult probe = probeUrl(QUrl(task.url), m_options, &stop);
@@ -208,6 +221,101 @@ TransferError DownloadWorker::downloadSegmented(DownloadTask &task, bool *fallBa
     }
     task.segments.clear();
     task.downloadedBytes = task.totalBytes;
+    return {};
+}
+
+TransferError DownloadWorker::downloadStream(DownloadTask &task)
+{
+    const std::atomic_bool &stop = m_control->stop;
+    const StreamPlan plan = resolveStreamPlan(QUrl(task.url), task.streamKind, task.streamVariant, m_options, &stop);
+    if (stop.load())
+        return { ErrorKind::Cancelled, QStringLiteral("Stopped by the user."), 0, -1 };
+    if (!plan.ok)
+        return plan.error;
+    if (!plan.label.isEmpty())
+        task.streamLabel = plan.label;
+
+    const QString directory = task.streamDirectory();
+    QDir().mkpath(directory);
+
+    // Pieces from a different version of the video must never be mixed in.
+    QFile marker(directory + QStringLiteral("/plan.txt"));
+    QByteArray previous;
+    if (marker.open(QIODevice::ReadOnly)) {
+        previous = marker.readAll();
+        marker.close();
+    }
+    if (previous != plan.fingerprint.toLatin1()) {
+        if (!previous.isEmpty())
+            m_note = QStringLiteral("The video changed since the last attempt, so the download restarted from the beginning.");
+        QDir(directory).removeRecursively();
+        QDir().mkpath(directory);
+        if (marker.open(QIODevice::WriteOnly | QIODevice::Truncate)) {
+            marker.write(plan.fingerprint.toLatin1());
+            marker.close();
+        }
+    }
+
+    if (plan.estimatedBytes > 0) {
+        const QStorageInfo storage(task.directory);
+        if (storage.isValid() && storage.bytesAvailable() >= 0 && storage.bytesAvailable() < plan.estimatedBytes) {
+            return { ErrorKind::Permanent,
+                     QStringLiteral("Not enough free disk space: this video needs about %1 bytes.").arg(plan.estimatedBytes), 0, -1 };
+        }
+    }
+
+    task.totalBytes = plan.estimatedBytes;
+    emit metadataReady(task.id, task.fileName, task.totalBytes, false, m_maxConnections);
+
+    StreamDownloadRequest request;
+    request.tracks = plan.tracks;
+    request.directory = directory;
+    request.connections = m_maxConnections;
+    request.options = m_options;
+    request.limiter = &m_control->limiter;
+
+    const qint64 id = task.id;
+    const qint64 estimate = plan.estimatedBytes;
+    const StreamDownloadResult result = downloadStreamPieces(request, stop, [this, id, estimate](qint64 bytes, int done, int total) {
+        // The exact size is only known at the end: scale what has arrived once enough has.
+        const qint64 projected = done >= 3 ? bytes * total / done : estimate;
+        emit progress(id, bytes, projected, {});
+        emit streamProgress(id, done, total);
+    });
+    task.downloadedBytes = result.bytes;
+    task.streamPiecesDone = result.piecesDone;
+    task.streamPiecesTotal = result.piecesTotal;
+    if (result.error.isError())
+        return result.error;
+
+    const MergeResult merged = mergeStream(plan.tracks, directory, stop, findFfmpeg());
+    if (!merged.ok) {
+        if (stop.load())
+            return { ErrorKind::Cancelled, merged.error, 0, -1 };
+        return { ErrorKind::Permanent, merged.error, 0, -1 };
+    }
+
+    // The name now follows what was actually produced, e.g. "lesson.ts" or "lesson.mp4".
+    QString base;
+    QString oldExtension;
+    splitExtension(task.fileName, &base, &oldExtension);
+    const QString wanted = base + QLatin1Char('.') + merged.extension;
+    if (wanted != task.fileName) {
+        task.fileName = uniqueFileName(task.directory, wanted);
+    }
+    QFile::remove(task.partPath());
+    if (!QFile::rename(merged.outputPath, task.partPath()))
+        return { ErrorKind::Permanent, QStringLiteral("Could not move the finished video into place."), 0, -1 };
+
+    if (!merged.extraPath.isEmpty()) {
+        const QString audioName = uniqueFileName(task.directory, base + QStringLiteral(".audio.") + merged.extraExtension);
+        QFile::rename(merged.extraPath, QDir(task.directory).filePath(audioName));
+    }
+    if (!merged.note.isEmpty())
+        m_note = merged.note;
+
+    QDir(directory).removeRecursively();
+    task.totalBytes = QFileInfo(task.partPath()).size();
     return {};
 }
 

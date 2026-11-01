@@ -109,3 +109,12 @@ Paste an `ftp://` or `ftps://` link like any other. FTP downloads can resume, bu
 ## Browser
 
 See "Browser extension" in the README. Opening Haul while it is already running brings the existing window to the front; `haul --add <url>` adds the link to it.
+
+## Video streams
+
+When a page plays a video, Haul's panel appears in the corner. Pick a quality and press **Download**, then confirm in the Add dialog. You can also paste an `.m3u8` or `.mpd` address into the Add dialog yourself.
+
+Sizes and time left start as estimates, shown with "About" or "≈", because a stream's exact size is only known at the end. The Details page shows the format, quality and how many pieces have arrived.
+
+If you see "Protected video", the stream is encrypted and Haul won't download it. "This is a live stream" means it has no fixed length. If a download stops saying the link expired, reopen the page and add it again, because many sites issue links that only last a short time.
+

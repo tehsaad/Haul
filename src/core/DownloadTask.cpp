@@ -31,6 +31,11 @@ QString DownloadTask::segmentPath(int index) const
     return finalPath() + QStringLiteral(".haul-seg%1").arg(index);
 }
 
+QString DownloadTask::streamDirectory() const
+{
+    return finalPath() + QStringLiteral(".haul-stream");
+}
+
 int DownloadTask::progressPercent() const
 {
     return haul::progressPercent(downloadedBytes, totalBytes);

@@ -7,6 +7,7 @@
 #include "core/FileNameUtils.h"
 #include "core/Formatters.h"
 #include "core/UrlValidator.h"
+#include "media/MediaMerger.h"
 #include "storage/SettingsRepository.h"
 
 #include <QApplication>
@@ -20,6 +21,7 @@
 #include <QLabel>
 #include <QLineEdit>
 #include <QPushButton>
+#include <QSignalBlocker>
 #include <QToolButton>
 #include <QVBoxLayout>
 #include <QtConcurrent/QtConcurrentRun>
@@ -74,6 +76,16 @@ AddDownloadDialog::AddDownloadDialog(DownloadManager *manager, SettingsRepositor
     info->addWidget(m_resumeValue, 2, 1);
     info->addWidget(makeLabel(QStringLiteral("Type"), QStringLiteral("muted"), infoCard), 3, 0);
     info->addWidget(m_typeValue, 3, 1);
+    m_qualityCaption = makeLabel(QStringLiteral("Quality"), QStringLiteral("muted"), infoCard);
+    m_quality = new QComboBox(infoCard);
+    info->addWidget(m_qualityCaption, 4, 0);
+    info->addWidget(m_quality, 4, 1);
+    m_qualityNote = makeLabel(QString(), QStringLiteral("warning"), infoCard);
+    m_qualityNote->setWordWrap(true);
+    info->addWidget(m_qualityNote, 5, 0, 1, 2);
+    m_qualityCaption->hide();
+    m_quality->hide();
+    m_qualityNote->hide();
     info->setColumnStretch(1, 1);
     root->addWidget(infoCard);
 
@@ -164,6 +176,7 @@ AddDownloadDialog::AddDownloadDialog(DownloadManager *manager, SettingsRepositor
     m_debounce.setSingleShot(true);
     m_debounce.setInterval(450);
 
+    connect(m_quality, &QComboBox::currentIndexChanged, this, &AddDownloadDialog::updateQualityDetails);
     connect(m_loginToggle, &QToolButton::toggled, this, [this](bool open) {
         m_loginToggle->setArrowType(open ? Qt::DownArrow : Qt::RightArrow);
         m_loginBox->setVisible(open);
@@ -173,7 +186,7 @@ AddDownloadDialog::AddDownloadDialog(DownloadManager *manager, SettingsRepositor
     connect(m_url, &QLineEdit::textChanged, this, &AddDownloadDialog::onUrlEdited);
     connect(&m_debounce, &QTimer::timeout, this, &AddDownloadDialog::startInspection);
     connect(m_cancelInspect, &QPushButton::clicked, this, &AddDownloadDialog::cancelInspection);
-    connect(&m_watcher, &QFutureWatcher<ProbeResult>::finished, this, &AddDownloadDialog::onInspectionFinished);
+    connect(&m_watcher, &QFutureWatcher<LinkInspection>::finished, this, &AddDownloadDialog::onInspectionFinished);
     connect(browse, &QPushButton::clicked, this, &AddDownloadDialog::browseDirectory);
     connect(m_directory, &QLineEdit::textChanged, this, &AddDownloadDialog::updateConflictHint);
     connect(m_fileName, &QLineEdit::textEdited, this, [this] {
@@ -210,6 +223,11 @@ void AddDownloadDialog::setFileName(const QString &name)
     updateConflictHint();
 }
 
+void AddDownloadDialog::setPreferredVariant(const QString &variantId)
+{
+    m_preferredVariant = variantId;
+}
+
 void AddDownloadDialog::setReferrer(const QString &referrer)
 {
     m_referrer = referrer;
@@ -239,6 +257,10 @@ void AddDownloadDialog::onUrlEdited()
 
     cancelInspection();
     m_probeFailedPermanently = false;
+    m_stream = StreamInfo();
+    m_qualityCaption->hide();
+    m_quality->hide();
+    m_qualityNote->hide();
     m_sizeValue->setText(QStringLiteral("—"));
     m_resumeValue->setText(QStringLiteral("—"));
     m_typeValue->setText(QStringLiteral("—"));
@@ -287,7 +309,16 @@ void AddDownloadDialog::startInspection()
         NetworkOptions options;
         options.connectTimeoutSeconds = 15;
         options.login = credentials;
-        return probeUrl(url, options, cancel.get());
+        LinkInspection inspection;
+        inspection.probe = probeUrl(url, options, cancel.get());
+        const QString type = inspection.probe.contentType.toLower();
+        const bool looksLikeStream = streamKindForUrl(url) != StreamKind::File || type.contains(QLatin1String("mpegurl"))
+            || type.contains(QLatin1String("dash+xml"));
+        if (inspection.probe.ok && looksLikeStream && !isFtpUrl(url)) {
+            inspection.isStream = true;
+            inspection.stream = inspectStream(url, options, cancel.get());
+        }
+        return inspection;
     }));
 }
 
@@ -304,7 +335,8 @@ void AddDownloadDialog::cancelInspection()
 void AddDownloadDialog::onInspectionFinished()
 {
     m_cancelInspect->hide();
-    const ProbeResult result = m_watcher.result();
+    const LinkInspection inspection = m_watcher.result();
+    const ProbeResult &result = inspection.probe;
     if (result.error.kind == ErrorKind::Cancelled)
         return;
     if (m_inspectedUrl != validateDownloadUrl(m_url->text()).url.toString())
@@ -322,6 +354,24 @@ void AddDownloadDialog::onInspectionFinished()
         return;
     }
 
+    if (inspection.isStream) {
+        if (inspection.stream.error.kind == ErrorKind::Cancelled)
+            return;
+        if (!inspection.stream.ok) {
+            m_probeFailedPermanently = inspection.stream.error.kind == ErrorKind::Permanent;
+            m_inspectStatus->setText(inspection.stream.error.message);
+            setRole(m_inspectStatus, m_probeFailedPermanently ? QStringLiteral("error") : QStringLiteral("warning"));
+            updateButtons();
+            return;
+        }
+        if (inspection.stream.kind != StreamKind::File) {
+            showStream(inspection.stream, result.suggestedName);
+            updateConflictHint();
+            updateButtons();
+            return;
+        }
+    }
+
     m_inspectStatus->setText(QStringLiteral("Looks good."));
     setRole(m_inspectStatus, QStringLiteral("success"));
     m_sizeValue->setText(result.totalSize >= 0 ? formatBytes(result.totalSize)
@@ -333,6 +383,50 @@ void AddDownloadDialog::onInspectionFinished()
         m_fileName->setText(result.suggestedName);
     updateConflictHint();
     updateButtons();
+}
+
+void AddDownloadDialog::showStream(const StreamInfo &stream, const QString &suggestedName)
+{
+    m_stream = stream;
+    m_inspectStatus->setText(QStringLiteral("Video stream found."));
+    setRole(m_inspectStatus, QStringLiteral("success"));
+    m_typeValue->setText(stream.kind == StreamKind::Hls ? QStringLiteral("HLS video") : QStringLiteral("DASH video"));
+    m_resumeValue->setText(QStringLiteral("Supported, piece by piece"));
+
+    {
+        const QSignalBlocker blocker(m_quality);
+        m_quality->clear();
+        for (const StreamVariant &variant : stream.variants)
+            m_quality->addItem(variant.label(), variant.id);
+        const int preferred = m_quality->findData(m_preferredVariant);
+        m_quality->setCurrentIndex(preferred >= 0 ? preferred : 0);
+    }
+    const bool hasChoice = stream.variants.size() > 1;
+    m_qualityCaption->setVisible(hasChoice);
+    m_quality->setVisible(hasChoice);
+    updateQualityDetails();
+
+    if (!m_nameEditedByUser) {
+        QString name = suggestedName;
+        if (name.endsWith(QLatin1String(".m3u8"), Qt::CaseInsensitive) || name.endsWith(QLatin1String(".m3u"), Qt::CaseInsensitive)
+            || name.endsWith(QLatin1String(".mpd"), Qt::CaseInsensitive))
+            name = name.left(name.lastIndexOf(QLatin1Char('.')));
+        if (!name.isEmpty())
+            m_fileName->setText(QFileInfo(name).suffix().isEmpty() ? name + QStringLiteral(".mp4") : name);
+    }
+}
+
+void AddDownloadDialog::updateQualityDetails()
+{
+    const int index = m_quality->currentIndex();
+    if (index < 0 || index >= m_stream.variants.size())
+        return;
+    const StreamVariant &variant = m_stream.variants[index];
+    m_sizeValue->setText(variant.estimatedBytes > 0 ? QStringLiteral("About %1").arg(formatBytes(variant.estimatedBytes))
+                                                    : QStringLiteral("Unknown until it finishes"));
+    const bool needsFfmpeg = variant.separateAudio && findFfmpeg().isEmpty();
+    m_qualityNote->setText(QStringLiteral("Picture and sound are separate here. Without FFmpeg, Haul saves them as two files."));
+    m_qualityNote->setVisible(needsFfmpeg);
 }
 
 void AddDownloadDialog::browseDirectory()
@@ -394,6 +488,11 @@ void AddDownloadDialog::submit(bool startNow)
     request.priority = static_cast<Priority>(m_priority->currentData().toInt());
     request.expectedSha256 = checksum;
     request.login = login();
+    if (m_stream.ok && m_stream.kind != StreamKind::File) {
+        request.streamKind = m_stream.kind;
+        request.streamVariant = m_quality->currentData().toString();
+        request.streamLabel = m_quality->currentText();
+    }
 
     QString error;
     m_createdId = m_manager->addDownload(request, &error);

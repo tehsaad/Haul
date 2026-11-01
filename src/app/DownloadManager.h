@@ -39,6 +39,9 @@ struct AddRequest {
     Priority priority = Priority::Normal;
     QString expectedSha256; // optional trusted checksum
     DownloadLogin login;    // optional; kept in memory only
+    StreamKind streamKind = StreamKind::File; // set automatically for .m3u8 and .mpd addresses
+    QString streamVariant;  // chosen quality; empty means the best
+    QString streamLabel;
 };
 
 // Owns every DownloadTask and coordinates their life cycle. Lives on the GUI thread;
@@ -98,6 +101,7 @@ signals:
 private slots:
     void onMetadata(qint64 taskId, const QString &fileName, qint64 totalBytes, bool acceptRanges, int connections);
     void onProgress(qint64 taskId, qint64 downloaded, qint64 total, QVector<haul::SegmentInfo> segments);
+    void onStreamProgress(qint64 taskId, int piecesDone, int piecesTotal);
     void onFinished(haul::WorkerOutcome outcome);
     void onSettingsChanged(const haul::AppSettings &settings);
     void tick();

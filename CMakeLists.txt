@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.21)
 
 project(Haul
-    VERSION 0.2.1
+    VERSION 0.3.0
     DESCRIPTION "Open-source desktop download manager"
     HOMEPAGE_URL "https://github.com/tehsaad/Haul"
     LANGUAGES CXX)

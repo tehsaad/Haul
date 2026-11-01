@@ -25,6 +25,7 @@ Endpoints
   /cookie/<size>    needs the cookie session=abc
   /redirect-file               302 to file:///etc/passwd (must be refused by the client)
 """
+import os
 import re
 import socket
 import socketserver
@@ -39,6 +40,7 @@ _blocks = {}
 _state_lock = threading.Lock()
 _mutable_version = 1
 _flaky_counts = {}
+STATIC_DIR = os.environ.get("HAUL_STATIC_DIR", "")
 
 
 def block(seed):
@@ -76,6 +78,102 @@ class Handler(BaseHTTPRequestHandler):
         if self.command != "HEAD":
             self.wfile.write(body)
 
+    def serve_stream(self, path, q, query):
+        """Synthetic streams. Options travel in the query string so every fixture is deterministic."""
+        count = int(q.get("count", "6"))
+        size = int(q.get("size", "20000"))
+        suffix = ("?" + query) if query else ""
+        hls = {"Content-Type": "application/vnd.apple.mpegurl"}
+        dash = {"Content-Type": "application/dash+xml"}
+
+        if path == "/streampage":
+            html = ('<!doctype html><title>Stream lesson</title><script>'
+                    'fetch("/hls/master.m3u8").then(r=>r.text());</script>').encode()
+            return self.send_simple(200, html, {"Content-Type": "text/html"})
+
+        if path == "/hls/master.m3u8":
+            lines = ["#EXTM3U"]
+            if q.get("enc") == "session":
+                lines.append('#EXT-X-SESSION-KEY:METHOD=AES-128,URI="k"')
+            if q.get("audio") == "1":
+                lines.append('#EXT-X-MEDIA:TYPE=AUDIO,GROUP-ID="a",NAME="en",DEFAULT=YES,URI="audio.m3u8%s"' % suffix)
+            group = ',AUDIO="a"' if q.get("audio") == "1" else ""
+            lines += ['#EXT-X-STREAM-INF:BANDWIDTH=800000,RESOLUTION=640x360,CODECS="avc1.4d401e,mp4a.40.2"%s' % group,
+                      "low.m3u8" + suffix,
+                      '#EXT-X-STREAM-INF:BANDWIDTH=2500000,RESOLUTION=1280x720,CODECS="avc1.4d401f,mp4a.40.2"%s' % group,
+                      "high.m3u8" + suffix,
+                      '#EXT-X-I-FRAME-STREAM-INF:BANDWIDTH=100000,URI="iframe.m3u8"']
+            return self.send_simple(200, "\n".join(lines).encode(), hls)
+
+        m = re.match(r"^/hls/(low|high|audio|single)\.m3u8$", path)
+        if m:
+            base = {"low": 1000, "high": 2000, "audio": 3000, "single": 4000}[m.group(1)]
+            lines = ["#EXTM3U", "#EXT-X-VERSION:3", "#EXT-X-TARGETDURATION:2"]
+            if q.get("enc") == "key":
+                lines.append('#EXT-X-KEY:METHOD=AES-128,URI="https://example.com/key"')
+            if q.get("fmp4") == "1":
+                lines.append('#EXT-X-MAP:URI="seg/%d.bin?size=100"' % (base + 999))
+            for i in range(count):
+                if q.get("enc") == "late" and i == count // 2:
+                    lines.append('#EXT-X-KEY:METHOD=SAMPLE-AES,URI="k"')
+                lines += ["#EXTINF:2.000,", "seg/%d.ts%s" % (base + i, suffix)]
+            if q.get("live") != "1":
+                lines.append("#EXT-X-ENDLIST")
+            return self.send_simple(200, "\n".join(lines).encode(), hls)
+
+        m = re.match(r"^/(?:hls|dash)/seg/(?:[a-z0-9]+/)?(\d+)\.[a-z0-9]+$", path)
+        if m:
+            n = int(m.group(1))
+            index = n % 1000
+            if str(index) == q.get("deny"):
+                return self.send_simple(403, b"denied")
+            if str(index) == q.get("html"):
+                return self.send_simple(200, b"<html>log in</html>", {"Content-Type": "text/html"})
+            if str(index) == q.get("flaky"):
+                key = "seg%s-%d" % (q.get("key", ""), n)
+                with _state_lock:
+                    _flaky_counts[key] = _flaky_counts.get(key, 0) + 1
+                    first = _flaky_counts[key] == 1
+                if first:
+                    return self.send_simple(503, b"busy")
+            if q.get("slow"):
+                time.sleep(float(q["slow"]))
+            body = content(n, 0, size)
+            if q.get("encv") == "1" and index == 999:
+                body = b"....encv...." + body
+            return self.send_simple(200, body, {"Content-Type": "video/mp2t"})
+
+        if path == "/dash/manifest.mpd":
+            protection = '<ContentProtection schemeIdUri="urn:uuid:edef8ba9-79d6-4ace-a3c8-27dcd51d21ed"/>' if q.get("enc") == "1" else ""
+            kind = 'dynamic' if q.get("live") == "1" else 'static'
+            periods = 2 if q.get("periods") == "2" else 1
+            video_timeline = ""
+            if q.get("timeline") == "1":
+                video_timeline = '<SegmentTimeline><S t="0" d="2000" r="%d"/></SegmentTimeline>' % (count - 1)
+                timing = ''
+            else:
+                timing = 'duration="2000"'
+            body = ('<?xml version="1.0"?><MPD xmlns="urn:mpeg:dash:schema:mpd:2011" type="%s" '
+                    'mediaPresentationDuration="PT%dS">' % (kind, count * 2))
+            for _ in range(periods):
+                body += ('<Period><AdaptationSet contentType="video" mimeType="video/mp4">%s'
+                         '<SegmentTemplate timescale="1000" %s startNumber="0" initialization="seg/$RepresentationID$/999.bin%s" '
+                         'media="seg/$RepresentationID$/$Number%%03d$.m4s%s">%s</SegmentTemplate>'
+                         '<Representation id="v360" bandwidth="800000" width="640" height="360" codecs="avc1.4d401e"/>'
+                         '<Representation id="v720" bandwidth="2500000" width="1280" height="720" codecs="avc1.4d401f"/>'
+                         '</AdaptationSet>' % (protection, timing, suffix.replace("&", "&amp;"), suffix.replace("&", "&amp;"), video_timeline))
+                body += ('<AdaptationSet contentType="audio" mimeType="audio/mp4">%s'
+                         '<SegmentTemplate timescale="1000" %s startNumber="0" initialization="seg/$RepresentationID$/999.bin" '
+                         'media="seg/$RepresentationID$/$Number%%03d$.m4s">%s</SegmentTemplate>'
+                         '<Representation id="a128" bandwidth="128000" codecs="mp4a.40.2"/></AdaptationSet></Period>'
+                         % (protection, timing, video_timeline))
+            body += "</MPD>"
+            return self.send_simple(200, body.encode(), dash)
+
+        if path == "/hls/garbage.m3u8":
+            return self.send_simple(200, b"<html>not a playlist</html>", {"Content-Type": "text/html"})
+        return self.send_simple(404, b"not found")
+
     def do_HEAD(self):
         self.do_GET()
 
@@ -98,6 +196,16 @@ class Handler(BaseHTTPRequestHandler):
         if path.startswith("/media/"):
             body = content(0, 0, 3000000)
             return self.send_simple(200, body, {"Content-Type": "video/mp4"})
+
+        if path.startswith("/hls/") or path.startswith("/dash/") or path.startswith("/streampage"):
+            return self.serve_stream(path, q, url.query)
+
+        if path.startswith("/static/") and STATIC_DIR:
+            target = os.path.realpath(os.path.join(STATIC_DIR, path[len("/static/"):]))
+            if not target.startswith(os.path.realpath(STATIC_DIR)) or not os.path.isfile(target):
+                return self.send_simple(404, b"not found")
+            with open(target, "rb") as f:
+                return self.send_simple(200, f.read())
 
         if path == "/redirect-file":
             return self.send_simple(302, b"", {"Location": "file:///etc/passwd"})
