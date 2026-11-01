@@ -168,7 +168,8 @@ api.webRequest.onHeadersReceived.addListener(
     if (details.tabId < 0 || isExcludedPage(details)) return;
     const found = classifyResponse(details);
     if (!found) return;
-    restored.then(() => {
+    Promise.all([restored, api.storage.local.get("panel")]).then(([, { panel }]) => {
+      if (panel === false) return; // switched off: no list, and no contact with any server
       if (found.stream) {
         offerStream(details, found);
         return;

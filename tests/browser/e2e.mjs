@@ -190,6 +190,23 @@ try {
   const lockedText = await until(() => js(`${shadow}?.textContent ?? ""`), (t) => t.includes("Protected"), 40);
   check("an encrypted stream is named, with nothing to press", lockedText.includes("Protected video"));
 
+  // ------------------------------------------------ switching Haul off stops all contact with servers
+  const hits = async (js2) => Number(await js2(`fetch("/hits?path=/hls/master.m3u8").then(r => r.text())`));
+  const targets = (await send("Target.getTargets")).targetInfos;
+  const worker = targets.find((t) => t.type === "service_worker" && t.url.includes(extId));
+  const workerSession = (await send("Target.attachToTarget", { targetId: worker.targetId, flatten: true })).sessionId;
+  await send("Runtime.evaluate", { expression: `chrome.storage.local.set({ panel: false })`, awaitPromise: true }, workerSession);
+  await sleep(500);
+  js = await openPage(`${base}/page`);
+  await sleep(1000);
+  const hitsBefore = await hits(js);
+  await js(`fetch("/hls/master.m3u8").then(r => r.text())`);
+  await sleep(2500);
+  // The page's own fetch is one request. A second would be Haul reading the manifest.
+  check("with Haul switched off, it doesn't contact the server", (await hits(js)) === hitsBefore + 1, `${hitsBefore} -> ${await hits(js)}`);
+  check("and shows nothing", (await js(`!!document.getElementById("haul-panel-host")`)) === false);
+  await send("Runtime.evaluate", { expression: `chrome.storage.local.remove("panel")`, awaitPromise: true }, workerSession);
+
   // Optional look at real sites: HAUL_E2E_SITES="https://a,https://b". Prints what was found.
   for (const site of (process.env.HAUL_E2E_SITES || "").split(",").filter(Boolean)) {
     const page = await openPage(site);

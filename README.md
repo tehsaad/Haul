@@ -141,7 +141,23 @@ The extension's popup can turn off the takeover, the pop-up or Haul's presence o
 
 ## Documentation
 
-[Architecture](docs/ARCHITECTURE.md) · [Feature research](docs/FEATURE_RESEARCH.md) · [User guide](docs/USER_GUIDE.md) · [Testing](docs/TESTING.md) · [Security](docs/SECURITY.md) · [PF concept mapping](docs/PF_CONCEPT_MAPPING.md) · [Demo script](docs/DEMO.md) · [Contributing](CONTRIBUTING.md) · [Changelog](CHANGELOG.md)
+[Architecture](docs/ARCHITECTURE.md) · [Feature research](docs/FEATURE_RESEARCH.md) · [User guide](docs/USER_GUIDE.md) · [Testing](docs/TESTING.md) · [Security](docs/SECURITY.md) · [Privacy](docs/PRIVACY.md) · [PF concept mapping](docs/PF_CONCEPT_MAPPING.md) · [Demo script](docs/DEMO.md) · [Contributing](CONTRIBUTING.md) · [Changelog](CHANGELOG.md)
+
+## Code signing policy
+
+Free code signing provided by SignPath.io, certificate by SignPath Foundation.
+
+**Status:** Haul is applying to this programme. Releases are unsigned until their release notes say otherwise.
+
+| Role | Members |
+|---|---|
+| Authors and committers | [tehsaad](https://github.com/tehsaad) |
+| Reviewers | [tehsaad](https://github.com/tehsaad) |
+| Approvers | [tehsaad](https://github.com/tehsaad) |
+
+Windows builds are made from this repository by GitHub Actions, and every signed release is approved by hand. Only Haul's own programs and installer are signed; libraries such as Qt keep their upstream status.
+
+**Privacy:** see the [privacy policy](docs/PRIVACY.md). Haul collects no analytics or telemetry.
 
 ## License
 
