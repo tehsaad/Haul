@@ -1,6 +1,6 @@
 # Everything except the widgets: core logic, networking, queue, storage, platform.
 # Tests link against this library directly.
-add_library(openload_engine STATIC
+add_library(haul_engine STATIC
     core/TaskState.cpp
     core/DownloadTask.cpp
     core/Formatters.cpp
@@ -23,15 +23,18 @@ add_library(openload_engine STATIC
     storage/DownloadRepository.cpp
     storage/SettingsRepository.cpp
     platform/Platform.cpp
+    platform/BrowserIntegration.cpp
     app/DownloadManager.cpp
+    app/InstanceGuard.cpp
 )
-target_include_directories(openload_engine PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
-target_link_libraries(openload_engine PUBLIC Qt6::Core CURL::libcurl SQLite::SQLite3)
-target_compile_definitions(openload_engine PUBLIC
-    OPENLOAD_VERSION="${PROJECT_VERSION}")
+target_include_directories(haul_engine PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+target_link_libraries(haul_engine PUBLIC Qt6::Core Qt6::Network CURL::libcurl SQLite::SQLite3)
+target_compile_definitions(haul_engine PUBLIC
+    HAUL_VERSION="${PROJECT_VERSION}")
+target_compile_definitions(haul_engine PRIVATE HAUL_SOURCE_DIR="${PROJECT_SOURCE_DIR}")
 
 # The Qt Widgets user interface.
-add_library(openload_ui STATIC
+add_library(haul_ui STATIC
     ui/Theme.cpp
     ui/Widgets.cpp
     ui/DownloadTableModel.cpp
@@ -42,13 +45,17 @@ add_library(openload_ui STATIC
     ui/QueuePage.cpp
     ui/SettingsPage.cpp
     ui/MainWindow.cpp
-    ${PROJECT_SOURCE_DIR}/assets/openload.qrc
+    ${PROJECT_SOURCE_DIR}/assets/haul.qrc
 )
-target_link_libraries(openload_ui PUBLIC openload_engine Qt6::Widgets Qt6::Svg Qt6::Concurrent)
+target_link_libraries(haul_ui PUBLIC haul_engine Qt6::Widgets Qt6::Svg Qt6::Concurrent)
 
-add_executable(openload WIN32 app/main.cpp)
-target_link_libraries(openload PRIVATE openload_ui)
+add_executable(haul WIN32 app/main.cpp)
+target_link_libraries(haul PRIVATE haul_ui)
+
+# Small console helper the browser starts for the extension (native messaging).
+add_executable(haul-native-host host/main.cpp)
+target_link_libraries(haul-native-host PRIVATE haul_engine)
 
 # Developer benchmark (not installed).
 add_executable(bench_segments EXCLUDE_FROM_ALL ${PROJECT_SOURCE_DIR}/tools/bench_segments.cpp)
-target_link_libraries(bench_segments PRIVATE openload_engine)
+target_link_libraries(bench_segments PRIVATE haul_engine)

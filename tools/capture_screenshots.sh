@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
 # Produces docs/screenshots/*.png from REAL application state:
-# starts the local test server, launches OpenLoad with an isolated config/data folder,
+# starts the local test server, launches Haul with an isolated config/data folder,
 # adds real downloads (one finishes, two are still running, one fails) and saves each page.
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
-APP="${1:-$ROOT/build/linux-debug/src/openload}"
+APP="${1:-$ROOT/build/linux-debug/src/haul}"
 OUT="${2:-$ROOT/docs/screenshots}"
 WORK="$(mktemp -d)"
 trap 'kill "$SERVER_PID" 2>/dev/null || true; rm -rf "$WORK"' EXIT

@@ -3,7 +3,7 @@
 #include "app/DownloadManager.h"
 #include "storage/SettingsRepository.h"
 
-namespace openload {
+namespace haul {
 
 Scheduler::Scheduler(SettingsRepository *settings, DownloadManager *manager, QObject *parent)
     : QObject(parent)
@@ -44,4 +44,4 @@ QString Scheduler::describe() const
     return text + QLatin1Char('.');
 }
 
-} // namespace openload
+} // namespace haul

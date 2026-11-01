@@ -7,7 +7,7 @@
 #include <QVector>
 #include <QtGlobal>
 
-namespace openload {
+namespace haul {
 
 // One byte range of a segmented download. `end` is inclusive, as in HTTP.
 struct SegmentInfo {
@@ -30,7 +30,7 @@ enum class ChecksumStatus {
     Mismatch = 2    // SHA-256 did not match: the file is not trustworthy
 };
 
-// Everything OpenLoad knows about one download.
+// Everything Haul knows about one download.
 // This is a plain value type: it is copied into worker threads and into the database.
 struct DownloadTask {
     qint64 id = 0;
@@ -76,4 +76,4 @@ struct DownloadTask {
     int progressPercent() const; // -1 when the size is unknown
 };
 
-} // namespace openload
+} // namespace haul

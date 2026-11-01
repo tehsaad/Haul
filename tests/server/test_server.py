@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
-"""Deterministic HTTP server for OpenLoad's network tests (Python standard library only).
+"""Deterministic HTTP server for Haul's network tests (Python standard library only).
 
-Starts on 127.0.0.1 with a random free port and prints "PORT <n>" on the first line.
+Starts on 127.0.0.1 with a random free port and prints "PORT <http> <ftp>" on the first line.
 
 Content: byte i of a file with seed s is BLOCK_s[i % 65521], where
 BLOCK_s[j] = (j * 31 + s) & 0xFF. The C++ tests generate the same bytes to compare.
@@ -21,9 +21,13 @@ Endpoints
   /bump             changes the content of /mutable
   /flaky/<size>?key=K&fail=N   the first N requests for key K return 503
   /redirect?to=<path>          302 to <path> on this server
+  /auth/<size>      needs HTTP Basic login test:secret
+  /cookie/<size>    needs the cookie session=abc
   /redirect-file               302 to file:///etc/passwd (must be refused by the client)
 """
 import re
+import socket
+import socketserver
 import sys
 import threading
 import time
@@ -58,7 +62,7 @@ def content(seed, start, end):
 
 class Handler(BaseHTTPRequestHandler):
     protocol_version = "HTTP/1.1"
-    server_version = "OpenLoadTestServer/1.0"
+    server_version = "HaulTestServer/1.0"
 
     def log_message(self, fmt, *args):  # keep test output quiet
         pass
@@ -92,7 +96,7 @@ class Handler(BaseHTTPRequestHandler):
         if path == "/redirect":
             return self.send_simple(302, b"", {"Location": q.get("to", "/file/10")})
 
-        m = re.match(r"^/(file|mutable|flaky)/(\d+)$", path)
+        m = re.match(r"^/(file|mutable|flaky|auth|cookie)/(\d+)$", path)
         if not m:
             return self.send_simple(404, b"not found")
 
@@ -103,6 +107,10 @@ class Handler(BaseHTTPRequestHandler):
             with _state_lock:
                 seed = _mutable_version
             etag = '"v%d"' % seed
+        if kind == "auth" and self.headers.get("Authorization") != "Basic dGVzdDpzZWNyZXQ=":  # test:secret
+            return self.send_simple(401, b"login", {"WWW-Authenticate": 'Basic realm="haul"'})
+        if kind == "cookie" and "session=abc" not in self.headers.get("Cookie", ""):
+            return self.send_simple(403, b"no cookie")
         if kind == "flaky":
             key = q.get("key", "default")
             with _state_lock:
@@ -177,10 +185,76 @@ class Handler(BaseHTTPRequestHandler):
             self.close_connection = True
 
 
+class FtpHandler(socketserver.StreamRequestHandler):
+    """Just enough FTP for libcurl: login test/secret or anonymous, SIZE, MDTM, REST and RETR /file/<n>."""
+
+    def say(self, line):
+        self.wfile.write((line + "\r\n").encode())
+        self.wfile.flush()
+
+    def handle(self):
+        self.say("220 ready")
+        user, logged_in, rest, passive = "", False, 0, None
+        while True:
+            raw = self.rfile.readline()
+            if not raw:
+                return
+            cmd, _, arg = raw.decode("latin-1").strip().partition(" ")
+            cmd = cmd.upper()
+            if cmd == "USER":
+                user = arg
+                self.say("331 password")
+            elif cmd == "PASS":
+                logged_in = user == "anonymous" or (user == "test" and arg == "secret")
+                self.say("230 ok" if logged_in else "530 wrong login")
+            elif not logged_in:
+                self.say("530 log in first")
+            elif cmd == "PWD":
+                self.say('257 "/"')
+            elif cmd in ("TYPE", "CWD"):
+                self.say("200 ok" if cmd == "TYPE" else "250 ok")
+            elif cmd in ("SIZE", "MDTM", "RETR"):
+                m = re.match(r"^/?(?:file/)?(\d+)$", arg)
+                if not m:
+                    self.say("550 not found")
+                elif cmd == "SIZE":
+                    self.say("213 %s" % m.group(1))
+                elif cmd == "MDTM":
+                    self.say("213 20261005100000")
+                else:
+                    self.say("150 sending")
+                    data, _ = passive.accept()
+                    data.sendall(content(0, rest, int(m.group(1))))
+                    data.close()
+                    passive.close()
+                    rest = 0
+                    self.say("226 done")
+            elif cmd == "REST":
+                rest = int(arg)
+                self.say("350 ok")
+            elif cmd == "EPSV":
+                passive = socket.socket()
+                passive.bind(("127.0.0.1", 0))
+                passive.listen(1)
+                self.say("229 passive (|||%d|)" % passive.getsockname()[1])
+            elif cmd == "QUIT":
+                self.say("221 bye")
+                return
+            else:
+                self.say("502 not implemented")
+
+
+class FtpServer(socketserver.ThreadingTCPServer):
+    daemon_threads = True
+    allow_reuse_address = True
+
+
 def main():
+    ftp = FtpServer(("127.0.0.1", 0), FtpHandler)
+    threading.Thread(target=ftp.serve_forever, daemon=True).start()
     server = ThreadingHTTPServer(("127.0.0.1", 0), Handler)
     server.daemon_threads = True
-    print("PORT %d" % server.server_address[1], flush=True)
+    print("PORT %d %d" % (server.server_address[1], ftp.server_address[1]), flush=True)
     try:
         server.serve_forever(poll_interval=0.1)
     except KeyboardInterrupt:

@@ -10,7 +10,7 @@ class QLabel;
 class QLineEdit;
 class QSpinBox;
 
-namespace openload::ui {
+namespace haul::ui {
 
 // Preferences. Values are validated by SettingsRepository and only saved when valid;
 // saving immediately changes how the download engine behaves.
@@ -39,8 +39,9 @@ private:
     QComboBox *m_theme;
     QCheckBox *m_confirmDelete;
     QCheckBox *m_startQueueOnLaunch;
+    QCheckBox *m_browser = nullptr;
     QCheckBox *m_launchAtLogin = nullptr;
     QLabel *m_status;
 };
 
-} // namespace openload::ui
+} // namespace haul::ui

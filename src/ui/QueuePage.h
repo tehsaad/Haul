@@ -13,13 +13,13 @@ class QTableView;
 class QStackedWidget;
 class QTimeEdit;
 
-namespace openload {
+namespace haul {
 class DownloadManager;
 class Scheduler;
 class SettingsRepository;
 }
 
-namespace openload::ui {
+namespace haul::ui {
 
 class DownloadFilterModel;
 class DownloadTableModel;
@@ -71,4 +71,4 @@ private:
     QLabel *m_scheduleError;
 };
 
-} // namespace openload::ui
+} // namespace haul::ui

@@ -1,6 +1,6 @@
 #include "UrlValidator.h"
 
-namespace openload {
+namespace haul {
 
 namespace {
 constexpr int kMaxUrlLength = 8192;
@@ -34,11 +34,12 @@ UrlCheck validateDownloadUrl(const QString &input)
 
     const QString scheme = url.scheme().toLower();
     if (scheme.isEmpty()) {
-        result.error = QStringLiteral("The URL must start with http:// or https://.");
+        result.error = QStringLiteral("The URL must start with http://, https:// or ftp://.");
         return result;
     }
-    if (scheme != QLatin1String("http") && scheme != QLatin1String("https")) {
-        result.error = QStringLiteral("Only http:// and https:// downloads are supported (got \"%1:\").")
+    if (scheme != QLatin1String("http") && scheme != QLatin1String("https")
+        && scheme != QLatin1String("ftp") && scheme != QLatin1String("ftps")) {
+        result.error = QStringLiteral("Only http, https and ftp links are supported (got \"%1:\").")
                            .arg(scheme);
         return result;
     }
@@ -47,7 +48,7 @@ UrlCheck validateDownloadUrl(const QString &input)
         return result;
     }
     if (!url.userInfo().isEmpty()) {
-        result.error = QStringLiteral("URLs with an embedded user name or password are not supported.");
+        result.error = QStringLiteral("Don't put a password in the link. Use the Login fields instead.");
         return result;
     }
 
@@ -67,4 +68,4 @@ QString redactUrl(const QUrl &url)
     return text;
 }
 
-} // namespace openload
+} // namespace haul

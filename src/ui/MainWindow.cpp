@@ -18,12 +18,14 @@
 #include <QButtonGroup>
 #include <QHBoxLayout>
 #include <QShortcut>
+#include <QStatusBar>
+#include <QTimer>
 #include <QStackedWidget>
 #include <QTableView>
 #include <QToolButton>
 #include <QVBoxLayout>
 
-namespace openload::ui {
+namespace haul::ui {
 
 MainWindow::MainWindow(DownloadManager *manager, SettingsRepository *settings, Scheduler *scheduler, QWidget *parent)
     : QMainWindow(parent)
@@ -31,10 +33,10 @@ MainWindow::MainWindow(DownloadManager *manager, SettingsRepository *settings, S
     , m_settings(settings)
     , m_scheduler(scheduler)
 {
-    setWindowTitle(QStringLiteral("OpenLoad"));
-    setWindowIcon(QIcon(QStringLiteral(":/openload.svg")));
-    resize(1320, 820);
-    setMinimumSize(1040, 640);
+    setWindowTitle(QStringLiteral("Haul"));
+    setWindowIcon(QIcon(QStringLiteral(":/haul.svg")));
+    resize(1120, 680);
+    setMinimumSize(820, 500);
 
     m_model = new DownloadTableModel(m_manager, this);
     m_actions = new TaskActions(m_manager, m_settings, this);
@@ -114,92 +116,66 @@ QWidget *MainWindow::buildSidebar()
     auto *sidebar = new QWidget(this);
     sidebar->setObjectName(QStringLiteral("Sidebar"));
     sidebar->setAttribute(Qt::WA_StyledBackground);
-    sidebar->setFixedWidth(232);
+    sidebar->setFixedWidth(148);
     auto *layout = new QVBoxLayout(sidebar);
-    layout->setContentsMargins(16, 20, 16, 18);
-    layout->setSpacing(4);
+    layout->setContentsMargins(0, 10, 0, 8);
+    layout->setSpacing(0);
 
     auto *brand = new QHBoxLayout;
-    brand->setSpacing(10);
+    brand->setContentsMargins(12, 0, 12, 10);
+    brand->setSpacing(7);
     auto *logo = new QLabel(sidebar);
-    logo->setPixmap(QIcon(QStringLiteral(":/openload.svg")).pixmap(34, 34));
-    auto *names = new QVBoxLayout;
-    names->setSpacing(0);
-    auto *name = new QLabel(QStringLiteral("OpenLoad"), sidebar);
+    logo->setPixmap(QIcon(QStringLiteral(":/haul.svg")).pixmap(20, 20));
+    auto *name = new QLabel(QStringLiteral("Haul"), sidebar);
     name->setObjectName(QStringLiteral("BrandName"));
-    auto *tag = new QLabel(QStringLiteral("Download manager"), sidebar);
-    tag->setObjectName(QStringLiteral("BrandTag"));
-    names->addWidget(name);
-    names->addWidget(tag);
     brand->addWidget(logo);
-    brand->addLayout(names, 1);
+    brand->addWidget(name, 1);
     layout->addLayout(brand);
-    layout->addSpacing(22);
-
-    auto *add = makeButton(QStringLiteral("Add download"), QStringLiteral("plus"), QStringLiteral("primary"), sidebar);
-    add->setToolTip(QStringLiteral("Add a new download (Ctrl+N)"));
-    connect(add, &QPushButton::clicked, this, [this] { openAddDialog(); });
-    layout->addWidget(add);
-    layout->addSpacing(18);
-    layout->addWidget(makeLabel(QStringLiteral("MENU"), QStringLiteral("caption"), sidebar));
-    layout->addSpacing(4);
 
     m_nav = new QButtonGroup(this);
     m_nav->setExclusive(true);
     const struct {
         Page page;
         const char *text;
-        const char *icon;
         const char *tip;
     } entries[] = {
-        { Dashboard, "Dashboard", "dashboard", "Ctrl+1" },
-        { Queue, "Queue && scheduler", "queue", "Ctrl+2" },
-        { Details, "Download details", "details", "Ctrl+3" },
-        { Settings, "Settings", "settings", "Ctrl+," },
+        { Dashboard, "Downloads", "Ctrl+1" },
+        { Queue, "Queue", "Ctrl+2" },
+        { Details, "Details", "Ctrl+3" },
+        { Settings, "Settings", "Ctrl+," },
     };
     for (const auto &e : entries) {
-        auto *button = new QToolButton(sidebar);
+        auto *button = new QPushButton(sidebar);
         button->setObjectName(QStringLiteral("NavButton"));
-        button->setText(QStringLiteral("  ") + QString::fromLatin1(e.text));
-        button->setIcon(Theme::icon(QString::fromLatin1(e.icon)));
-        button->setIconSize(QSize(18, 18));
-        button->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
+        button->setText(QString::fromLatin1(e.text));
         button->setCheckable(true);
         button->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
-        button->setCursor(Qt::PointingHandCursor);
         button->setToolTip(QString::fromLatin1(e.tip));
         m_nav->addButton(button, e.page);
         layout->addWidget(button);
     }
     connect(m_nav, &QButtonGroup::idClicked, this, [this](int id) { showPage(static_cast<Page>(id)); });
-
     layout->addStretch();
-    auto *footer = makeCard(sidebar);
-    auto *footerLayout = new QVBoxLayout(footer);
-    footerLayout->setContentsMargins(14, 12, 14, 12);
-    footerLayout->setSpacing(2);
-    footerLayout->addWidget(makeLabel(QStringLiteral("TOTAL SPEED"), QStringLiteral("caption"), footer));
-    m_sidebarSpeed = new QLabel(QStringLiteral("0 B/s"), footer);
-    m_sidebarSpeed->setObjectName(QStringLiteral("SidebarSpeed"));
-    m_sidebarStatus = new QLabel(footer);
-    m_sidebarStatus->setObjectName(QStringLiteral("SidebarFooter"));
-    m_sidebarStatus->setWordWrap(true);
-    footerLayout->addWidget(m_sidebarSpeed);
-    footerLayout->addWidget(m_sidebarStatus);
-    layout->addWidget(footer);
+
+    m_sidebarStatus = new QLabel(this);
+    m_sidebarSpeed = new QLabel(this);
+    m_sidebarSpeed->setObjectName(QStringLiteral("StatusSpeed"));
+    m_sidebarStatus->setContentsMargins(8, 0, 8, 0);
+    m_sidebarSpeed->setContentsMargins(8, 0, 8, 0);
+    statusBar()->setSizeGripEnabled(false);
+    statusBar()->addWidget(m_sidebarStatus, 1);
+    statusBar()->addPermanentWidget(m_sidebarSpeed);
     return sidebar;
 }
 
 void MainWindow::updateSidebarStats()
 {
     const DownloadStats s = m_manager->stats();
-    m_sidebarSpeed->setText(s.speed > 0 ? formatSpeed(s.speed) : QStringLiteral("0 B/s"));
-    QString limit = m_settings->current().speedLimitKiB > 0
-        ? QStringLiteral("Limit %1/s").arg(formatBytes(qint64(m_settings->current().speedLimitKiB) * 1024))
-        : QStringLiteral("No speed limit");
-    m_sidebarStatus->setText(QStringLiteral("%1 active · queue %2\n%3")
-                                 .arg(s.active)
-                                 .arg(m_manager->isQueueRunning() ? QStringLiteral("running") : QStringLiteral("stopped"), limit));
+    m_sidebarSpeed->setText(s.speed > 0 ? formatSpeed(s.speed) : QString());
+    QString text = m_manager->isQueueRunning() ? QStringLiteral("Queue running") : QStringLiteral("Queue stopped");
+    if (m_settings->current().speedLimitKiB > 0)
+        text += QStringLiteral("  ·  limited to %1/s").arg(formatBytes(qint64(m_settings->current().speedLimitKiB) * 1024));
+    m_sidebarStatus->setText(text);
 }
 
 QWidget *MainWindow::pageWidget(Page page) const
@@ -222,11 +198,44 @@ void MainWindow::showDetails(qint64 taskId)
     showPage(Details);
 }
 
-qint64 MainWindow::openAddDialog(const QString &url)
+void MainWindow::bringToFront()
+{
+    if (isMinimized())
+        showNormal();
+    show();
+    raise();
+    activateWindow();
+}
+
+void MainWindow::askAboutDownload(const QString &url, const QString &fileName)
+{
+    m_pendingLinks.append({ url, fileName });
+    if (m_pendingLinks.size() == 1) // otherwise the loop below is already showing a dialog
+        QTimer::singleShot(0, this, &MainWindow::showNextPendingLink);
+}
+
+void MainWindow::showNextPendingLink()
+{
+    if (m_pendingLinks.isEmpty())
+        return;
+    if (QApplication::activeModalWidget()) { // the user is busy in another dialog: try again shortly
+        QTimer::singleShot(300, this, &MainWindow::showNextPendingLink);
+        return;
+    }
+    bringToFront();
+    const QPair<QString, QString> link = m_pendingLinks.first();
+    openAddDialog(link.first, link.second);
+    m_pendingLinks.removeFirst();
+    showNextPendingLink();
+}
+
+qint64 MainWindow::openAddDialog(const QString &url, const QString &fileName)
 {
     AddDownloadDialog dialog(m_manager, m_settings, this);
     if (!url.isEmpty())
         dialog.setUrl(url);
+    if (!fileName.isEmpty())
+        dialog.setFileName(fileName);
     if (dialog.exec() != QDialog::Accepted)
         return 0;
     if (const DownloadTask *t = m_manager->task(dialog.createdTaskId())) {
@@ -260,4 +269,4 @@ void MainWindow::removeSelected()
         m_actions->removeWithConfirmation(id);
 }
 
-} // namespace openload::ui
+} // namespace haul::ui

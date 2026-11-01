@@ -5,7 +5,7 @@
 #include <QFileInfo>
 #include <QHash>
 
-namespace openload {
+namespace haul {
 
 namespace {
 
@@ -214,7 +214,7 @@ int applyStartupRecovery(QVector<DownloadTask> &tasks)
         if (task.state == TaskState::Downloading) {
             task.state = TaskState::Paused;
             task.interrupted = true;
-            task.errorMessage = QStringLiteral("Interrupted when OpenLoad last closed. It will be revalidated with the server before resuming.");
+            task.errorMessage = QStringLiteral("Interrupted when Haul last closed. It will be revalidated with the server before resuming.");
             ++interrupted;
         }
         if (task.state == TaskState::Completed)
@@ -235,4 +235,4 @@ int applyStartupRecovery(QVector<DownloadTask> &tasks)
     return interrupted;
 }
 
-} // namespace openload
+} // namespace haul

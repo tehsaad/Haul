@@ -1,6 +1,18 @@
 # Changelog
 
-All notable changes to OpenLoad are documented here (format: [Keep a Changelog](https://keepachangelog.com/)).
+All notable changes to Haul are documented here (format: [Keep a Changelog](https://keepachangelog.com/)).
+
+## [0.2.0] — unreleased
+
+### Changed
+- Renamed the project from OpenLoad to Haul. Data now lives under the `Haul` folders; the old `OpenLoad` folders are not imported.
+- Reworked the interface: warm neutral colours with one copper accent, a toolbar and dense list instead of statistic cards, a status bar, sentence-case labels and shorter wording.
+
+### Added
+- Browser extension for Chromium browsers and Firefox, connected through native messaging (no local web server). Links from the browser always open the Add dialog first.
+- Only one copy runs per user; a second copy passes its links to the first and exits.
+- Logins for HTTP (user name and password, or a cookie) and FTP, held in memory only. Failed downloads can be retried with **Log in…**.
+- `ftp://` and `ftps://` downloads with resume.
 
 ## [0.1.0] — 2026-10-24 (unreleased)
 

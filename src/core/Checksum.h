@@ -4,7 +4,7 @@
 
 #include <atomic>
 
-namespace openload {
+namespace haul {
 
 // True for exactly 64 hexadecimal characters (case-insensitive).
 bool isValidSha256Hex(const QString &text);
@@ -13,4 +13,4 @@ bool isValidSha256Hex(const QString &text);
 // cannot be read or `cancel` becomes true while hashing.
 QString sha256OfFile(const QString &path, const std::atomic_bool *cancel = nullptr);
 
-} // namespace openload
+} // namespace haul

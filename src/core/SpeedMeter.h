@@ -2,7 +2,7 @@
 
 #include <QtGlobal>
 
-namespace openload {
+namespace haul {
 
 // Smooths the download speed with an exponential moving average so the number
 // shown in the UI does not jump around with every network packet.
@@ -27,4 +27,4 @@ private:
     bool m_hasSpeed = false;
 };
 
-} // namespace openload
+} // namespace haul

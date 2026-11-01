@@ -5,7 +5,7 @@
 #include <QFileInfo>
 #include <QStringList>
 
-namespace openload {
+namespace haul {
 
 namespace {
 
@@ -56,8 +56,8 @@ QString sanitizeFileName(const QString &name)
         out = QLatin1Char('_') + out;
 
     // Never let our own temporary suffixes be chosen as a final name.
-    if (out.contains(QLatin1String(".openload-")))
-        out.replace(QLatin1String(".openload-"), QLatin1String("_openload-"));
+    if (out.contains(QLatin1String(".haul-")))
+        out.replace(QLatin1String(".haul-"), QLatin1String("_haul-"));
 
     if (out.size() > kMaxNameLength) {
         splitExtension(out, &base, &extension);
@@ -140,7 +140,7 @@ QString uniqueFileName(const QString &directory, const QString &name, const QSet
     const QDir dir(directory);
     auto taken = [&](const QString &candidate) {
         return reserved.contains(candidate) || QFileInfo::exists(dir.filePath(candidate))
-            || QFileInfo::exists(dir.filePath(candidate + QStringLiteral(".openload-part")));
+            || QFileInfo::exists(dir.filePath(candidate + QStringLiteral(".haul-part")));
     };
 
     if (!taken(name))
@@ -183,4 +183,4 @@ QString categoryForFileName(const QString &name)
     return QStringLiteral("Other");
 }
 
-} // namespace openload
+} // namespace haul

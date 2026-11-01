@@ -17,10 +17,10 @@
 
 #include <algorithm>
 
-using namespace openload;
+using namespace haul;
 using namespace testsupport;
 
-// One self-contained OpenLoad "installation" in a temporary folder.
+// One self-contained Haul "installation" in a temporary folder.
 struct Fixture {
     QTemporaryDir dir;
     Database db;
@@ -42,14 +42,14 @@ struct Fixture {
 
     void open()
     {
-        db.open(dir.filePath("openload.db"));
+        db.open(dir.filePath("haul.db"));
         db.migrate();
         repo = std::make_unique<DownloadRepository>(db);
         settings = std::make_unique<SettingsRepository>(dir.filePath("settings.ini"));
         manager = std::make_unique<DownloadManager>(repo.get(), settings.get());
     }
 
-    // Simulates quitting and starting OpenLoad again with the same data.
+    // Simulates quitting and starting Haul again with the same data.
     void restart()
     {
         manager.reset();
@@ -317,7 +317,7 @@ private slots:
     void crashRecovery()
     {
         Fixture f;
-        // Pretend OpenLoad crashed while this task was downloading.
+        // Pretend Haul crashed while this task was downloading.
         DownloadTask t;
         t.url = server.url("/file/100000");
         t.directory = f.dir.path();

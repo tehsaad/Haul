@@ -16,16 +16,16 @@
 #include <algorithm>
 #include <utility>
 
-namespace openload {
+namespace haul {
 
 DownloadManager::DownloadManager(DownloadRepository *repository, SettingsRepository *settings, QObject *parent)
     : QObject(parent)
     , m_repository(repository)
     , m_settings(settings)
 {
-    qRegisterMetaType<openload::WorkerOutcome>();
-    qRegisterMetaType<openload::SegmentInfo>();
-    qRegisterMetaType<QVector<openload::SegmentInfo>>();
+    qRegisterMetaType<haul::WorkerOutcome>();
+    qRegisterMetaType<haul::SegmentInfo>();
+    qRegisterMetaType<QVector<haul::SegmentInfo>>();
 
     connect(m_settings, &SettingsRepository::changed, this, &DownloadManager::onSettingsChanged);
     connect(&m_tick, &QTimer::timeout, this, &DownloadManager::tick);
@@ -231,6 +231,8 @@ qint64 DownloadManager::addDownload(const AddRequest &request, QString *error)
         task.id = m_tasks.empty() ? 1 : m_tasks.rbegin()->first + 1;
 
     const qint64 id = task.id;
+    if (!request.login.isEmpty())
+        m_logins.insert(id, request.login);
     m_tasks.emplace(id, task);
     emit taskAdded(id);
     schedule();
@@ -303,6 +305,17 @@ bool DownloadManager::retry(qint64 id)
     return true;
 }
 
+bool DownloadManager::logIn(qint64 id, const DownloadLogin &login)
+{
+    const DownloadTask *t = task(id);
+    if (!t || t->state == TaskState::Completed)
+        return false;
+    m_logins.insert(id, login);
+    if (t->state == TaskState::Paused || t->state == TaskState::Failed || t->state == TaskState::Cancelled)
+        return retry(id);
+    return true;
+}
+
 bool DownloadManager::cancel(qint64 id)
 {
     DownloadTask *t = find(id);
@@ -342,6 +355,7 @@ bool DownloadManager::remove(qint64 id, bool deleteFile)
     if (m_repository)
         m_repository->remove(id);
     m_tasks.erase(id);
+    m_logins.remove(id);
     m_dirtyProgress.remove(id);
     emit taskRemoved(id);
     emit statsChanged();
@@ -482,7 +496,9 @@ bool DownloadManager::startTask(DownloadTask &task)
     ActiveTransfer transfer;
     transfer.control = std::make_shared<TransferControl>();
     transfer.thread = new QThread(this);
-    transfer.worker = new DownloadWorker(task, settings.maxConnectionsPerDownload, NetworkOptions(), transfer.control);
+    NetworkOptions options;
+    options.login = m_logins.value(task.id);
+    transfer.worker = new DownloadWorker(task, settings.maxConnectionsPerDownload, options, transfer.control);
     transfer.worker->moveToThread(transfer.thread);
 
     connect(transfer.thread, &QThread::started, transfer.worker, &DownloadWorker::run);
@@ -592,6 +608,7 @@ void DownloadManager::onFinished(WorkerOutcome outcome)
         if (m_repository)
             m_repository->remove(id);
         m_tasks.erase(id);
+        m_logins.remove(id);
         emit taskRemoved(id);
         rebalanceBandwidth();
         schedule();
@@ -702,11 +719,11 @@ void DownloadManager::shutdown()
             applyStartupRecovery(single); // read the real progress from disk
             t->downloadedBytes = single.first().downloadedBytes;
             t->segments = single.first().segments;
-            t->errorMessage = QStringLiteral("Paused because OpenLoad was closed.");
+            t->errorMessage = QStringLiteral("Paused because Haul was closed.");
             persist(*t);
         }
     }
     m_active.clear();
 }
 
-} // namespace openload
+} // namespace haul

@@ -9,7 +9,7 @@
 
 #include <memory>
 
-namespace openload {
+namespace haul {
 
 struct AppSettings {
     QString downloadDirectory;
@@ -34,7 +34,7 @@ inline bool operator!=(const AppSettings &a, const AppSettings &b) { return !(a 
 QStringList validateSettings(const AppSettings &settings);
 
 // Loads, validates and saves settings with QSettings
-// (an INI file in ~/.config/OpenLoad on Linux, the registry on Windows).
+// (an INI file in ~/.config/Haul on Linux, the registry on Windows).
 class SettingsRepository : public QObject
 {
     Q_OBJECT
@@ -56,7 +56,7 @@ public:
     void setScheduleState(const ScheduleState &state);
 
 signals:
-    void changed(const openload::AppSettings &settings);
+    void changed(const haul::AppSettings &settings);
 
 private:
     AppSettings load() const;
@@ -66,4 +66,4 @@ private:
     AppSettings m_current;
 };
 
-} // namespace openload
+} // namespace haul

@@ -5,11 +5,11 @@
 #include <atomic>
 #include <chrono>
 
-namespace openload {
+namespace haul {
 
 // A small token-bucket limiter used from inside a transfer thread.
 // The limit can be changed from the GUI thread at any time (it is atomic),
-// which lets OpenLoad re-balance the global bandwidth cap while downloads run.
+// which lets Haul re-balance the global bandwidth cap while downloads run.
 class RateLimiter
 {
 public:
@@ -28,4 +28,4 @@ private:
     qint64 m_windowBytes = 0;
 };
 
-} // namespace openload
+} // namespace haul

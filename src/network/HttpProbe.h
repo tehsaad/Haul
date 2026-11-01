@@ -4,7 +4,7 @@
 
 #include <atomic>
 
-namespace openload {
+namespace haul {
 
 // What we learn about a URL before (or before resuming) a download.
 struct ProbeResult {
@@ -26,4 +26,4 @@ struct ProbeResult {
 ProbeResult probeUrl(const QUrl &url, const NetworkOptions &options,
                      const std::atomic_bool *cancel = nullptr);
 
-} // namespace openload
+} // namespace haul

@@ -8,15 +8,20 @@
 #include <QCheckBox>
 #include <QClipboard>
 #include <QDesktopServices>
+#include <QDialog>
+#include <QDialogButtonBox>
 #include <QDir>
 #include <QFileInfo>
+#include <QFormLayout>
+#include <QLabel>
+#include <QLineEdit>
 #include <QMenu>
 #include <QMessageBox>
 #include <QProcess>
 #include <QPushButton>
 #include <QUrl>
 
-namespace openload::ui {
+namespace haul::ui {
 
 TaskActions::TaskActions(DownloadManager *manager, SettingsRepository *settings, QWidget *dialogParent)
     : QObject(dialogParent)
@@ -51,10 +56,42 @@ QMenu *TaskActions::buildMenu(qint64 id, QWidget *parent)
     cancel->setEnabled(!isFinishedState(s));
     menu->addSeparator();
 
+    QAction *login = menu->addAction(QStringLiteral("Log in…"), this, [this, id] { askForLogin(id); });
+    login->setEnabled(s != TaskState::Completed);
     menu->addAction(Theme::icon(QStringLiteral("copy")), QStringLiteral("Copy URL"), this, [this, id] { copyUrl(id); });
     menu->addAction(Theme::icon(QStringLiteral("trash"), Theme::current().danger), QStringLiteral("Remove from list…"), this,
                     [this, id] { removeWithConfirmation(id); });
     return menu;
+}
+
+void TaskActions::askForLogin(qint64 id)
+{
+    const DownloadTask *t = m_manager->task(id);
+    if (!t)
+        return;
+    QDialog dialog(m_dialogParent);
+    dialog.setWindowTitle(QStringLiteral("Log in"));
+    auto *form = new QFormLayout(&dialog);
+    auto *user = new QLineEdit(&dialog);
+    auto *password = new QLineEdit(&dialog);
+    password->setEchoMode(QLineEdit::Password);
+    auto *cookie = new QLineEdit(&dialog);
+    form->addRow(new QLabel(t->fileName, &dialog));
+    form->addRow(QStringLiteral("User name"), user);
+    form->addRow(QStringLiteral("Password"), password);
+    form->addRow(QStringLiteral("Cookie"), cookie);
+    form->addRow(new QLabel(QStringLiteral("Not saved. Haul forgets this when it closes."), &dialog));
+    auto *buttons = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel, &dialog);
+    form->addRow(buttons);
+    connect(buttons, &QDialogButtonBox::accepted, &dialog, &QDialog::accept);
+    connect(buttons, &QDialogButtonBox::rejected, &dialog, &QDialog::reject);
+    if (dialog.exec() != QDialog::Accepted)
+        return;
+    DownloadLogin login;
+    login.username = user->text();
+    login.password = password->text();
+    login.cookie = cookie->text().trimmed().toUtf8();
+    m_manager->logIn(id, login);
 }
 
 void TaskActions::openFile(qint64 id)
@@ -126,4 +163,4 @@ bool TaskActions::removeWithConfirmation(qint64 id)
     return m_manager->remove(id, deleteFile);
 }
 
-} // namespace openload::ui
+} // namespace haul::ui

@@ -2,7 +2,7 @@
 
 #include <QString>
 
-namespace openload {
+namespace haul {
 
 enum class ErrorKind {
     None,
@@ -41,4 +41,4 @@ struct RetryPolicy {
     int delayForAttempt(int attempt, int retryAfterSeconds = -1) const;
 };
 
-} // namespace openload
+} // namespace haul

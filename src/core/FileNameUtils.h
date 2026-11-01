@@ -4,7 +4,7 @@
 #include <QString>
 #include <QUrl>
 
-namespace openload {
+namespace haul {
 
 // Turns any server- or user-supplied name into a safe single path component:
 // no directory separators, no "..", no control or reserved characters, no Windows
@@ -29,4 +29,4 @@ void splitExtension(const QString &name, QString *base, QString *extension);
 // "Video", "Audio", "Archive", "Document", "Program", "Image" or "Other".
 QString categoryForFileName(const QString &name);
 
-} // namespace openload
+} // namespace haul

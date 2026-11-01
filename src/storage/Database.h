@@ -6,7 +6,7 @@
 struct sqlite3;
 struct sqlite3_stmt;
 
-namespace openload {
+namespace haul {
 
 // RAII wrapper around one prepared SQLite statement. All values are bound as
 // parameters (never pasted into the SQL text), which prevents SQL injection.
@@ -70,4 +70,4 @@ private:
     QString m_lastError;
 };
 
-} // namespace openload
+} // namespace haul

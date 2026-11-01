@@ -9,7 +9,7 @@
 #include <memory>
 #include <vector>
 
-namespace openload {
+namespace haul {
 
 namespace {
 
@@ -249,4 +249,4 @@ bool assembleSegments(const QVector<SegmentInfo> &segments, const SegmentPathFun
     return true;
 }
 
-} // namespace openload
+} // namespace haul

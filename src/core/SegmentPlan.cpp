@@ -2,7 +2,7 @@
 
 #include <algorithm>
 
-namespace openload {
+namespace haul {
 
 int segmentCountFor(qint64 totalBytes, int maxConnections)
 {
@@ -55,4 +55,4 @@ qint64 segmentsDownloaded(const QVector<SegmentInfo> &segments)
     return sum;
 }
 
-} // namespace openload
+} // namespace haul
