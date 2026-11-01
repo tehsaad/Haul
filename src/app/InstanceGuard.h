@@ -17,6 +17,7 @@ struct IpcCommand {
     Type type = Show;
     QString url;
     QString fileName;     // optional hint, sanitized later
+    QString referrer;     // optional http(s) origin the link came from
     bool confirm = false; // true: open the Add dialog instead of starting straight away
 };
 

@@ -35,6 +35,7 @@ bool parseBrowserMessage(const QByteArray &json, IpcCommand *command, QString *e
     forwarded["cmd"] = QStringLiteral("add");
     forwarded["url"] = o.value("url").toString();
     forwarded["name"] = o.value("filename").toString();
+    forwarded["referrer"] = o.value("referrer").toString();
     forwarded["confirm"] = true; // a browser can suggest a download, never start one by itself
     return decodeIpcCommand(QJsonDocument(forwarded).toJson(QJsonDocument::Compact), command, error);
 }

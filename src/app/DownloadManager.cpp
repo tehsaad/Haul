@@ -310,7 +310,9 @@ bool DownloadManager::logIn(qint64 id, const DownloadLogin &login)
     const DownloadTask *t = task(id);
     if (!t || t->state == TaskState::Completed)
         return false;
-    m_logins.insert(id, login);
+    DownloadLogin updated = login;
+    updated.referer = m_logins.value(id).referer;
+    m_logins.insert(id, updated);
     if (t->state == TaskState::Paused || t->state == TaskState::Failed || t->state == TaskState::Cancelled)
         return retry(id);
     return true;

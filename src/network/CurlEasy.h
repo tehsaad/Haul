@@ -17,8 +17,9 @@ struct DownloadLogin {
     QString username;
     QString password;
     QByteArray cookie; // "name=value; name2=value2", typed by the user
+    QByteArray referer; // site the link came from; some servers refuse downloads without it
 
-    bool isEmpty() const { return username.isEmpty() && password.isEmpty() && cookie.isEmpty(); }
+    bool isEmpty() const { return username.isEmpty() && password.isEmpty() && cookie.isEmpty() && referer.isEmpty(); }
 };
 
 inline bool isFtpUrl(const QUrl &url)
@@ -30,7 +31,7 @@ inline bool isFtpUrl(const QUrl &url)
 struct NetworkOptions {
     int connectTimeoutSeconds = 20;
     int stallTimeoutSeconds = 60; // abort if fewer than 1 byte/s arrives for this long
-    QByteArray userAgent = "Haul/0.2 (+https://github.com/tehsaad/Haul)";
+    QByteArray userAgent = "Haul/0.2.1 (+https://github.com/tehsaad/Haul)";
     DownloadLogin login;
 };
 

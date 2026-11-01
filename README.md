@@ -96,11 +96,14 @@ Six suites cover the engine, storage, queue, network behaviour (ranges, ignored 
 
 1. In Haul, open **Settings → Browser**, tick **Allow the browser extension** and press **Save**.
 2. Click **Show extension folder**, then load that folder in `chrome://extensions` (Developer mode → Load unpacked) or in Firefox's `about:debugging`.
-3. Right-click a link and choose **Download with Haul**. Haul shows the Add dialog and only starts after you confirm. The popup has an optional switch to send every browser download to Haul.
+3. That's it. Downloads you start in the browser now open Haul's Add dialog instead, and a small panel appears on pages that play an ordinary video or audio file. You can also right-click a link and choose **Download with Haul**. Nothing starts until you confirm in Haul.
+
+The extension's popup can turn the takeover or the panel off. Turn the takeover off for a download that needs you to be logged in to the site, since Haul doesn't read your browser's cookies.
 
 ## Known limitations
 
 - Logins are typed by hand and forgotten when Haul closes. Haul does not read cookies or passwords from your browser, so a download that depends on a browser session needs its cookie pasted in.
+- The panel only offers ordinary files. Streamed video (HLS, DASH, anything played from a `blob:` address), DRM-protected video and YouTube aren't offered: Haul doesn't break stream protection, and YouTube's terms forbid downloading.
 - FTP downloads use one connection. Plain `ftp://` is unencrypted; use `ftps://` when the server offers it.
 - The browser extension isn't in the Chrome or Firefox stores yet. Chromium browsers load it unpacked; release Firefox only keeps unsigned add-ons until it restarts. Snap browsers (the default Firefox on Ubuntu) may block native messaging.
 - The scheduler only runs while Haul is open.
