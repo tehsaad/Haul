@@ -1,11 +1,11 @@
 ; Haul installer (NSIS 3, Modern UI 2)
-;   makensis /DVERSION=0.4.0 /DSTAGE=..\..\stage /DOUTFILE=Haul-0.4.0-Setup.exe installer.nsi
+;   makensis /DVERSION=0.4.1 /DSTAGE=..\..\stage /DOUTFILE=Haul-0.4.1-Setup.exe installer.nsi
 
 Unicode true
 !include "MUI2.nsh"
 
 !ifndef VERSION
-  !define VERSION "0.4.0"
+  !define VERSION "0.4.1"
 !endif
 !ifndef STAGE
   !define STAGE "..\..\stage"
@@ -27,7 +27,7 @@ VIProductVersion "${VERSION}.0"
 VIAddVersionKey "ProductName" "${APPNAME}"
 VIAddVersionKey "FileDescription" "${APPNAME} installer"
 VIAddVersionKey "FileVersion" "${VERSION}"
-VIAddVersionKey "LegalCopyright" "MIT License"
+VIAddVersionKey "LegalCopyright" "Apache License 2.0"
 
 !define MUI_ICON "haul.ico"
 !define MUI_UNICON "haul.ico"
