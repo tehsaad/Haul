@@ -1,11 +1,11 @@
 ; Haul installer (NSIS 3, Modern UI 2)
-;   makensis /DVERSION=0.1.0 /DSTAGE=..\..\stage /DOUTFILE=Haul-0.1.0-Setup.exe installer.nsi
+;   makensis /DVERSION=0.2.1 /DSTAGE=..\..\stage /DOUTFILE=Haul-0.2.1-Setup.exe installer.nsi
 
 Unicode true
 !include "MUI2.nsh"
 
 !ifndef VERSION
-  !define VERSION "0.1.0"
+  !define VERSION "0.2.1"
 !endif
 !ifndef STAGE
   !define STAGE "..\..\stage"
