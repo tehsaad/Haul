@@ -2,7 +2,7 @@
 <component type="desktop-application">
   <id>io.github.tehsaad.Haul</id>
   <metadata_license>CC0-1.0</metadata_license>
-  <project_license>MIT</project_license>
+  <project_license>Apache-2.0</project_license>
   <name>Haul</name>
   <summary>Download manager with resume, queues and multi-connection downloads</summary>
   <description>
