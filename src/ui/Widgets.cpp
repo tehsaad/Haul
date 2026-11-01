@@ -169,7 +169,7 @@ void StatusBadge::setState(TaskState state, const QString &text)
     QColor background = color;
     background.setAlpha(40);
     setText(text.isEmpty() ? stateLabel(state) : text);
-    setStyleSheet(QStringLiteral("QLabel { color: %1; background: rgba(%2,%3,%4,%5); border-radius: 10px;"
+    setStyleSheet(QStringLiteral("QLabel { color: %1; background: rgba(%2,%3,%4,%5); border-radius: 0;"
                                  " padding: 3px 10px; font-weight: 600; font-size: 9pt; }")
                       .arg(color.name()).arg(background.red()).arg(background.green())
                       .arg(background.blue()).arg(background.alpha()));
