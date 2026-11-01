@@ -102,7 +102,7 @@ The browser extension watches the responses a page actually receives, so it work
 | **Audio** | MP3, WAV, FLAC, AAC, M4A, OGG, Opus, WMA |
 | **Streams** | HLS (`.m3u8`), MPEG-DASH (`.mpd`) |
 
-A response counts only if its status, type and size make sense: a `.mp4` address that returns a web page is ignored, and pieces of a stream aren't listed as files. A small indicator shows how many files a page has. Clicking it opens the panel, and only then does Haul read the first bytes of each file to confirm its real format, size and resume support. Files whose bytes turn out not to be media disappear from the list.
+A response counts only if its status, type and size make sense: a `.mp4` address that returns a web page is ignored, and pieces of a stream aren't listed as files. When a page loads media, the list pops up by itself for a few seconds and a **Download with Haul** button appears on the video. If you ignore the list, it shrinks to a small indicator. Haul reads each file's first bytes only when you click or hover over the list, to confirm its real format, size and resume support. Files whose bytes turn out not to be media disappear from the list.
 
 Estimated values are marked with ≈. Downloads go through the normal manager, so queues, retries, resume and checksums all apply.
 
@@ -118,9 +118,9 @@ Haul stops with a clear message on encrypted streams (DRM, AES-128 or SAMPLE-AES
 
 1. In Haul, open **Settings → Browser**, tick **Allow the browser extension** and press **Save**.
 2. Click **Show extension folder**, then load that folder in `chrome://extensions` (Developer mode → Load unpacked) or in Firefox's `about:debugging`.
-3. That's it. Downloads you start in the browser now open Haul's Add dialog instead, and a small indicator appears on pages with audio or video. Click it to see the list and choose a file or quality. You can also right-click a link and choose **Download with Haul**. Nothing starts until you confirm in Haul.
+3. That's it. Downloads you start in the browser now open Haul's Add dialog instead, and a list pops up on pages with audio or video, with a button on the video itself. Choose a file or quality and press **Download**. You can also right-click a link and choose **Download with Haul**. Nothing starts until you confirm in Haul.
 
-The extension's popup can turn the takeover or the indicator off, and reopen a hidden list.
+The extension's popup can turn off the takeover, the pop-up or Haul's presence on pages, and reopen a hidden list. On Linux with Wayland, Haul runs through XWayland so its dialog can appear in front of the browser; set `QT_QPA_PLATFORM=wayland` if you prefer native Wayland.
 
 ## Known limitations
 
@@ -145,4 +145,4 @@ The extension's popup can turn the takeover or the indicator off, and reopen a h
 
 ## License
 
-MIT; see [LICENSE](LICENSE). Icons and artwork are original to this project. Qt is used under the LGPL v3, libcurl under the curl license, and SQLite is public domain.
+Apache License 2.0; see [LICENSE](LICENSE). Icons and artwork are original to this project. Qt is used under the LGPL v3, libcurl under the curl license, and SQLite is public domain.

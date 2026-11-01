@@ -35,7 +35,8 @@ public:
     void showDetails(qint64 taskId);
     // Opens the Add Download dialog, optionally pre-filled. Returns the new task id or 0.
     qint64 openAddDialog(const QString &url = QString(), const QString &fileName = QString(),
-                         const QString &referrer = QString(), const QString &variant = QString());
+                         const QString &referrer = QString(), const QString &variant = QString(),
+                         bool stayOnTop = false);
     void bringToFront();
     // A link from outside (the browser): opens the Add dialog; several links wait their turn.
     void askAboutDownload(const QString &url, const QString &fileName, const QString &referrer = QString(),

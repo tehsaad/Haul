@@ -2,6 +2,7 @@
 <meta charset="utf-8">
 <title>Haul</title>
 <style>
+  #unsupported { margin-bottom: 8px; color: #a8402f; }
   body { font: 13px/1.4 system-ui, sans-serif; width: 260px; margin: 12px; color: #2a2824; background: #fbf9f5; }
   label { display: flex; gap: 8px; align-items: flex-start; margin-bottom: 8px; }
   button { font: inherit; margin-bottom: 8px; padding: 3px 9px; }
@@ -10,6 +11,8 @@
 </style>
 <button id="show">Show media on this page</button>
 <label><input type="checkbox" id="capture"><span>Send browser downloads to Haul</span></label>
-<label><input type="checkbox" id="panel"><span>Show the indicator when a page has media</span></label>
+<label><input type="checkbox" id="panel"><span>Show Haul on pages with media</span></label>
+<label><input type="checkbox" id="autoOpen"><span>Open the list by itself</span></label>
+<p id="unsupported" hidden>Haul doesn't download from YouTube. Its streams are protected, and its terms don't allow downloading.</p>
 <p>Haul asks before it starts anything. If a server won't let Haul in, the download stays in your browser. Encrypted video and YouTube aren't offered.</p>
 <script src="popup.js"></script>

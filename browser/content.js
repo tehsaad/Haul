@@ -1,5 +1,5 @@
-// Haul's indicator and panel. A small chip shows how many media files this page has; clicking it
-// opens the list. Files are checked with the server only when the panel is opened.
+// Haul's pop-up. When a page has media, the list opens by itself for a few seconds and a Download
+// button appears on the video. Files are checked with the server only once the user shows interest.
 (() => {
   const api = globalThis.browser ?? globalThis.chrome;
   const { isMediaLink, mediaKey, fileNameFor, EXCLUDED_HOSTS } = globalThis.HaulDetector;
@@ -7,13 +7,23 @@
 
   const MAX_ROWS = 40;
   const MAX_CHECKS_AT_ONCE = 3;
+  const AUTO_CLOSE_MS = 12000;
+  const MIN_VIDEO_WIDTH = 200;
+  const MIN_VIDEO_HEIGHT = 120;
 
   const rows = new Map(); // key -> { media, elements, ... }
   let root = null;
   let chip = null;
   let panel = null;
   let list = null;
+  let floatButton = null;
   let open = false;
+  let pinned = false;        // the user asked for the list, so it stays until they close it
+  let collapsedByUser = false;
+  let hovering = false;
+  let autoOpen = true;
+  let checksAllowed = false;
+  let closeTimer = null;
   let dismissed = false;
   let enabled = false;
   let checksRunning = 0;
@@ -73,6 +83,9 @@
         .get.alt { color: #e6e2da; background: #35322e; }
         .get.alt:hover { background: #45413c; }
         .get[disabled] { cursor: default; color: #9b958b; background: #35322e; }
+        .float { all: unset; position: fixed; cursor: pointer; padding: 5px 11px; font: 600 13px/1.3 system-ui, sans-serif;
+                 color: #1b1a18; background: #cf8a42; box-shadow: 0 2px 8px #0007; }
+        .float:hover { background: #db9a55; }
         select { font: inherit; color: #e6e2da; background: #2e2c29; border: 1px solid #393633; padding: 1px 3px; max-width: 120px; }
       </style>
       <div class="panel" hidden>
@@ -80,23 +93,93 @@
         <div class="list"></div>
         <div class="legend">≈ means an estimate. Other values come from the server or the player.</div>
       </div>
-      <button class="chip"></button>`;
+      <button class="chip"></button>
+      <button class="float" hidden>Download with Haul</button>`;
     chip = root.querySelector(".chip");
     panel = root.querySelector(".panel");
     list = root.querySelector(".list");
-    chip.addEventListener("click", () => setOpen(!open));
+    floatButton = root.querySelector(".float");
+    chip.addEventListener("click", () => {
+      if (open && pinned) {
+        collapsedByUser = true;
+        setOpen(false);
+      } else {
+        showList();
+      }
+    });
+    floatButton.addEventListener("click", showList);
+    panel.addEventListener("mouseenter", () => {
+      hovering = true;
+      allowChecks();
+    });
+    panel.addEventListener("mouseleave", () => {
+      hovering = false;
+      scheduleClose();
+    });
     root.querySelector(".close").addEventListener("click", () => {
       dismissed = true;
       host.remove();
       root = null;
+      open = false;
     });
     (document.body || document.documentElement).appendChild(host);
+    placeFloatButton();
   }
 
   function setOpen(value) {
     open = value;
     panel.hidden = !open;
-    if (open) rows.forEach(queueCheck);
+  }
+
+  // Reading a file's first bytes contacts its server, so wait until the user shows interest.
+  function allowChecks() {
+    checksAllowed = true;
+    rows.forEach(queueCheck);
+  }
+
+  function showList() {
+    pinned = true;
+    collapsedByUser = false;
+    clearTimeout(closeTimer);
+    setOpen(true);
+    allowChecks();
+  }
+
+  function scheduleClose() {
+    clearTimeout(closeTimer);
+    closeTimer = setTimeout(() => {
+      if (!pinned && !hovering) setOpen(false);
+    }, AUTO_CLOSE_MS);
+  }
+
+  function popUp() {
+    if (!autoOpen || collapsedByUser || pinned) return;
+    setOpen(true);
+    scheduleClose();
+  }
+
+  // The largest video in view gets the button, at its top right corner.
+  function placeFloatButton() {
+    if (!floatButton) return;
+    let best = null;
+    let bestArea = 0;
+    if (rows.size > 0) {
+      for (const video of document.querySelectorAll("video")) {
+        if (video.mediaKeys) continue;
+        const box = video.getBoundingClientRect();
+        const area = box.width * box.height;
+        const inView = box.bottom > 0 && box.right > 0 && box.top < innerHeight && box.left < innerWidth;
+        if (inView && box.width >= MIN_VIDEO_WIDTH && box.height >= MIN_VIDEO_HEIGHT && area > bestArea) {
+          best = box;
+          bestArea = area;
+        }
+      }
+    }
+    floatButton.hidden = !best;
+    if (best) {
+      floatButton.style.top = `${Math.max(best.top, 0) + 8}px`;
+      floatButton.style.right = `${Math.max(innerWidth - best.right, 0) + 8}px`;
+    }
   }
 
   function updateCount() {
@@ -105,6 +188,7 @@
       chip.textContent = `Haul: ${count}`;
       chip.title = `${count} media ${count === 1 ? "file" : "files"} on this page`;
       if (root) root.host.hidden = count === 0;
+      placeFloatButton();
     }
     api.runtime.sendMessage({ type: "haul-count", count }).catch(() => {});
   }
@@ -301,7 +385,7 @@
     else if (media.via === "page") setNote(row, "Linked from this page. Not checked yet.");
     else setNote(row, "Seen loading in this page.");
     renderMeta(row);
-    if (open) queueCheck(row);
+    if (checksAllowed) queueCheck(row);
     return row;
   }
 
@@ -325,6 +409,8 @@
     if (!root) buildUi();
     addRow(media);
     updateCount();
+    // Links alone don't pop up: only media the page is actually loading does.
+    if (media.via !== "page" || document.querySelector("video, audio")) popUp();
   }
 
   function offerPageAddress(address, kind) {
@@ -377,8 +463,9 @@
   }
 
   async function start() {
-    const { panel: wanted } = await api.storage.local.get("panel");
-    enabled = wanted !== false;
+    const settings = await api.storage.local.get(["panel", "autoOpen"]);
+    enabled = settings.panel !== false;
+    autoOpen = settings.autoOpen !== false;
     api.runtime.onMessage.addListener((message) => {
       if (message.type === "haul-media") {
         offer(message.media);
@@ -392,7 +479,7 @@
           for (const row of rows.values()) list.append(row.element);
           updateCount();
         }
-        if (root) setOpen(true);
+        if (root) showList();
       }
     });
     const known = await api.runtime.sendMessage({ type: "haul-list" });
@@ -400,6 +487,9 @@
     if (!enabled) return;
     scanPage();
     new MutationObserver(scanSoon).observe(document.documentElement, { childList: true, subtree: true });
+    addEventListener("scroll", placeFloatButton, { passive: true, capture: true });
+    addEventListener("resize", placeFloatButton, { passive: true });
+    setInterval(placeFloatButton, 1000); // players often resize without telling anyone
   }
   start();
 })();

@@ -100,10 +100,18 @@ try {
   let js = await openPage(`${base}/page`);
   await until(() => js(names), (n) => n && n.includes("clip.mp4"));
   check("a page's video is found without any click", (await js(names)).includes("clip.mp4"));
-  check("the indicator shows and the panel stays closed", (await js(`${shadow}.querySelector(".chip").textContent`)) === "Haul: 1"
-        && (await js(`${shadow}.querySelector(".panel").hidden`)) === true);
-  await js(`${shadow}.querySelector(".chip").click()`);
-  check("clicking the indicator opens the panel", (await js(`${shadow}.querySelector(".panel").hidden`)) === false);
+  check("the list pops up by itself", (await js(`${shadow}.querySelector(".chip").textContent`)) === "Haul: 1"
+        && (await js(`${shadow}.querySelector(".panel").hidden`)) === false);
+  check("popping up contacts no server", /Seen loading|Linked/.test(await js(noteOf("clip.mp4"))), await js(noteOf("clip.mp4")));
+  check("a Download button sits on the video", (await until(() => js(`${shadow}.querySelector(".float").hidden`), (h) => h === false, 12)) === false);
+  const place = await js(`(() => { const v = document.querySelector("video").getBoundingClientRect(); const b = ${shadow}.querySelector(".float").getBoundingClientRect(); return b.top >= v.top && b.top < v.top + 30 && b.right <= v.right && b.right > v.right - 30; })()`);
+  check("at the video's top right corner", place === true);
+  await until(() => js(`${shadow}.querySelector(".panel").hidden`), (h) => h === true, 56);
+  check("the list closes by itself when ignored, leaving the indicator", (await js(`${shadow}.querySelector(".panel").hidden`)) === true);
+  await js(`${shadow}.querySelector(".float").click()`);
+  check("the video's button opens the list", (await js(`${shadow}.querySelector(".panel").hidden`)) === false);
+  await sleep(1000);
+  check("and now the file is checked", !/Seen loading/.test(await js(noteOf("clip.mp4"))), await js(noteOf("clip.mp4")));
   await js(`${shadow}.querySelector(".get").click()`);
   await until(() => js(`${shadow}.querySelector(".get").textContent`), (t) => t === "Sent");
   const fromPanel = received.find((m) => (m.url || "").includes("clip.mp4"));

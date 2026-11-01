@@ -46,6 +46,12 @@ void captureScreenshots(ui::MainWindow &window, const QString &directory)
 
 int main(int argc, char *argv[])
 {
+#if defined(Q_OS_LINUX)
+    // Wayland doesn't let an app bring its own window forward, so Haul's dialog could open behind
+    // the browser. Under XWayland it can stay on top. Set QT_QPA_PLATFORM to choose otherwise.
+    if (qEnvironmentVariable("XDG_SESSION_TYPE") == QLatin1String("wayland") && !qEnvironmentVariableIsSet("QT_QPA_PLATFORM"))
+        qputenv("QT_QPA_PLATFORM", "xcb;wayland");
+#endif
     QApplication app(argc, argv);
     QApplication::setOrganizationName(QStringLiteral("Haul"));
     QApplication::setApplicationName(QStringLiteral("Haul"));
