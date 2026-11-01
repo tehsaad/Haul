@@ -89,10 +89,22 @@ api.downloads.onCreated.addListener(async (item) => {
   const { capture } = await api.storage.local.get("capture");
   if (capture === false || !/^(https?|ftp):/i.test(item.url)) return;
 
+  // Hold the download while Haul asks the server. If the server won't serve Haul (a login, say, or
+  // a site that only accepts browsers), the browser simply carries on and nothing is lost.
+  try {
+    await api.downloads.pause(item.id);
+  } catch {
+    return; // it already finished in the browser, so there is nothing left to take over
+  }
+  const check = await askHost({ type: "verify", url: item.url, referrer: originOf(item.referrer) });
+  if (!check || !check.ok) {
+    api.downloads.resume(item.id).catch(() => {});
+    return;
+  }
   try {
     await api.downloads.cancel(item.id);
   } catch {
-    return; // it already finished in the browser, so there is nothing left to take over
+    return;
   }
   api.downloads.erase({ id: item.id });
   const name = (item.filename || "").split(/[\\/]/).pop();
@@ -202,6 +214,11 @@ api.runtime.onMessage.addListener((message, sender, respond) => {
   }
   if (message.type === "haul-verify") {
     askHost({ type: "verify", url: message.url, referrer: originOf(sender.tab && sender.tab.url) }).then(respond);
+    return true;
+  }
+  if (message.type === "haul-browser-download") {
+    passThrough.add(message.url);
+    api.downloads.download({ url: message.url }).then(() => respond({ ok: true }), (e) => respond({ ok: false, error: e.message }));
     return true;
   }
   if (message.type === "haul-add") {

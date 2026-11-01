@@ -70,6 +70,8 @@
         .legend { padding: 4px 8px; font-size: 11px; color: #9b958b; border-top: 1px solid #393633; }
         .get { all: unset; cursor: pointer; padding: 3px 9px; color: #1b1a18; background: #cf8a42; font-weight: 600; }
         .get:hover { background: #db9a55; }
+        .get.alt { color: #e6e2da; background: #35322e; }
+        .get.alt:hover { background: #45413c; }
         .get[disabled] { cursor: default; color: #9b958b; background: #35322e; }
         select { font: inherit; color: #e6e2da; background: #2e2c29; border: 1px solid #393633; padding: 1px 3px; max-width: 120px; }
       </style>
@@ -179,6 +181,22 @@
     }
   }
 
+  // The page can already reach this file, so the browser itself can always try.
+  function offerBrowserDownload(row) {
+    if (row.browserButton) return;
+    const button = document.createElement("button");
+    button.className = "get alt";
+    button.textContent = "In browser";
+    button.title = "Download this with your browser instead of Haul";
+    button.addEventListener("click", async () => {
+      button.disabled = true;
+      const answer = await api.runtime.sendMessage({ type: "haul-browser-download", url: row.media.url });
+      button.textContent = answer && answer.ok ? "Started" : "Failed";
+    });
+    row.browserButton = button;
+    row.element.append(button);
+  }
+
   function applyCheck(row, answer) {
     const m = row.media;
     if (!answer || answer.unreachable) {
@@ -186,8 +204,10 @@
       return;
     }
     if (!answer.ok) {
-      if (answer.restricted) setNote(row, "The server wants a login. You can still try, and enter it in Haul.", "warn");
-      else if (answer.gone) setNote(row, "This link no longer works.", "bad");
+      if (answer.restricted) {
+        setNote(row, "This server didn't let Haul in. It may need a login or only accept browsers.", "warn");
+        offerBrowserDownload(row);
+      } else if (answer.gone) setNote(row, "This link no longer works.", "bad");
       else setNote(row, answer.error || "Could not check this file.", "warn");
       return;
     }
@@ -239,7 +259,7 @@
 
     if (media.stream && media.error) {
       setNote(row, media.encrypted ? "Protected video. Haul can't download this."
-        : media.restricted ? "This video needs a login, so Haul can't check it from here."
+        : media.restricted ? "This server didn't let Haul in. It may need a login or only accept browsers."
         : media.unreachable ? "In Haul: Settings → Browser → Allow the browser extension"
         : media.error, media.encrypted ? "bad" : "warn");
       renderMeta(row);

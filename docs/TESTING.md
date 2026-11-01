@@ -73,6 +73,17 @@ On 2026-11-01 the parser was also pointed at public test streams published for t
 
 `tests/browser/e2e.mjs` loads the unpacked extension into Chrome with a temporary profile, using the real `haul-native-host` and a stand-in for Haul's socket: `node tests/browser/e2e.mjs build/linux-debug/src/haul-native-host`. It covers the indicator and panel, several files on a page, background and redirected player requests, signed duplicates, stream pieces, fake media removed by the byte check, a 6 GB file, stream qualities, and encrypted streams. CI runs it on Linux and Windows.
 
+Setting `HAUL_E2E_SITES` also loads real pages and prints what was found. On 2026-11-01:
+
+| Page | Result |
+|---|---|
+| hls.js demo | Found the HLS stream with 5 qualities, 1920×1080, 10:35, about 471 MB |
+| w3schools HTML video | Found `mov_bbb.mp4`, 320×176, 0:10, 770 KB. The server refused Haul (403), so the row offers **In browser** |
+| w3schools HTML audio | Nothing found: the page had no media element when loaded headless |
+| dash.js reference player | Nothing found: the player loads nothing until its Load button is pressed |
+
+This is a small sample of public pages, not evidence about any other site.
+
 ## Segmented download benchmark
 
 The tool is `tools/bench_segments.cpp`. It was run in a Release build against the local test server on 2026-10-24:

@@ -114,6 +114,20 @@ try {
   check("a browser download is taken over", !!captured && captured.confirm === true, JSON.stringify(captured));
   check("only the site's address is sent as referrer", !!captured && captured.referrer === `${new URL(base).origin}/`, captured?.referrer);
 
+  // ------------------------------------------------ a server that only serves the browser's session
+  js = await openPage(`${base}/page`);
+  await sleep(800);
+  const before = received.length;
+  await js(`(() => { document.cookie = "session=abc"; const a = document.createElement("a"); a.href = "/cookie/400000?name=private.bin"; a.download = ""; document.body.append(a); a.click(); })()`);
+  await sleep(3500);
+  check("a download only the browser can get stays in the browser", received.length === before, JSON.stringify(received.slice(before)));
+  await js(`document.body.insertAdjacentHTML("beforeend", '<a href="/m/private.mp4?deny=1">x</a>')`);
+  await until(() => js(names), (n) => n && n.includes("private.mp4"));
+  await js(`${shadow}.querySelector(".chip").click()`);
+  await until(() => js(noteOf("private.mp4")), (t) => t && t.includes("didn't let Haul in"));
+  check("a file the server refuses Haul is explained", (await js(noteOf("private.mp4")) || "").includes("didn't let Haul in"), await js(noteOf("private.mp4")));
+  check("and can be downloaded in the browser", (await js(`[...${shadow}.querySelectorAll(".get.alt")].length`)) === 1);
+
   // ------------------------------------------------ many files on one page
   js = await openPage(`${base}/mediapage`);
   await until(() => js(names), (n) => n && n.includes("playerfile.mp4") && n.includes("song.mp3"));
@@ -176,8 +190,9 @@ try {
     await sleep(6000);
     await page(`${shadow}?.querySelector(".chip")?.click()`);
     await sleep(5000);
-    const rows = await page(`[...(${shadow}?.querySelectorAll(".row") ?? [])].map(r => r.innerText.replace(/\n+/g, " | "))`);
+    const rows = await page(`[...(${shadow}?.querySelectorAll(".row") ?? [])].map(r => r.innerText.split(String.fromCharCode(10)).filter(Boolean).join(" | "))`);
     console.log(`SITE ${site}: ${(rows || []).length} found`);
+    console.log("  elements:", JSON.stringify(await page(`[...document.querySelectorAll("video, audio")].map(m => [m.tagName, m.currentSrc, m.readyState, !!m.mediaKeys, [...m.querySelectorAll("source")].map(x => x.src)])`)));
     for (const row of rows || []) console.log(`  ${row}`);
   }
 } catch (e) {

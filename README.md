@@ -120,12 +120,12 @@ Haul stops with a clear message on encrypted streams (DRM, AES-128 or SAMPLE-AES
 2. Click **Show extension folder**, then load that folder in `chrome://extensions` (Developer mode → Load unpacked) or in Firefox's `about:debugging`.
 3. That's it. Downloads you start in the browser now open Haul's Add dialog instead, and a small indicator appears on pages with audio or video. Click it to see the list and choose a file or quality. You can also right-click a link and choose **Download with Haul**. Nothing starts until you confirm in Haul.
 
-The extension's popup can turn the takeover or the indicator off, and reopen a hidden list. Turn the takeover off for a download that needs you to be logged in to the site, since Haul doesn't read your browser's cookies.
+The extension's popup can turn the takeover or the indicator off, and reopen a hidden list.
 
 ## Known limitations
 
 - Logins are typed by hand and forgotten when Haul closes. Haul does not read cookies or passwords from your browser, so a download that depends on a browser session needs its cookie pasted in.
-- Encrypted video, live streams, DASH split into several periods, and YouTube aren't downloaded. Some sites build their streams in ways Haul can't see from the browser, so the indicator won't appear on every site. Checks are made without your browser's cookies, so a file behind a login shows as needing one.
+- Encrypted video, live streams, DASH split into several periods, and YouTube aren't downloaded. Some sites build their streams in ways Haul can't see from the browser, so the indicator won't appear on every site. Haul identifies itself honestly and doesn't use your browser's cookies, so some servers will refuse it. When that happens, a download you started stays in the browser, and the panel offers **In browser** instead.
 - FTP downloads use one connection. Plain `ftp://` is unencrypted; use `ftps://` when the server offers it.
 - The browser extension isn't in the Chrome or Firefox stores yet. Chromium browsers load it unpacked; release Firefox only keeps unsigned add-ons until it restarts. Snap browsers (the default Firefox on Ubuntu) may block native messaging.
 - The scheduler only runs while Haul is open.

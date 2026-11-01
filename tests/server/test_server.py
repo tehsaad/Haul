@@ -108,6 +108,8 @@ class Handler(BaseHTTPRequestHandler):
 
     def serve_media(self, path, q):
         """A file with a real signature and any size; options set what its headers say."""
+        if q.get("deny") == "1":
+            return self.send_simple(403, b"denied")
         name = path[3:]
         extension = name.rsplit(".", 1)[-1].lower() if "." in name else ""
         fmt = q.get("fmt", extension)

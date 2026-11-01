@@ -62,3 +62,7 @@ Haul handles unencrypted HLS and DASH only, and has no site-specific extraction.
 * **Manifests are untrusted.** Size is capped at 10 MiB and pieces at 200,000. XML is parsed without fetching external entities, piece addresses must be http or https, and a manifest on the public internet can't point at localhost or private network addresses.
 * YouTube hosts are excluded from detection. Live streams are refused because they never end.
 
+## Servers that refuse Haul
+
+Haul always sends its own `User-Agent` and never imitates a browser, and it doesn't use browser cookies. A server that refuses it gets its way: the download continues in the browser, which the site already accepts, or stops in Haul with a message. This is deliberate, and getting past such a refusal is out of scope.
+

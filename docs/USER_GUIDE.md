@@ -123,7 +123,7 @@ If you see "Protected video", the stream is encrypted and Haul won't download it
 Each row shows what is known: format, resolution, length, size, bitrate, MIME type and the site it comes from. "≈" marks an estimate. Opening the list also checks each file:
 
 * **Checked: a real MP4 file. Can resume.** Haul read its first bytes.
-* **The server wants a login.** The check runs without your browser's login. You can still try, and enter it in Haul.
+* **This server didn't let Haul in.** It may need a login or only accept browsers. Press **In browser** to download it with your browser, or use **Download** and enter a login in Haul.
 * **This link no longer works.** Reload the page, since many links expire.
 
 A file that claims to be media but turns out to be a web page is removed from the list.

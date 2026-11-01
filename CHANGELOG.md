@@ -13,6 +13,7 @@ All notable changes to Haul are documented here (format: [Keep a Changelog](http
 - The detection list survives the browser stopping the extension's background worker.
 
 ### Changed
+- A browser download is only taken over if the server accepts Haul; otherwise it carries on in the browser. The panel offers **In browser** for files that refuse Haul.
 - The panel no longer opens by itself.
 - `probeUrl` reads the first 4 KiB instead of 1 byte.
 
