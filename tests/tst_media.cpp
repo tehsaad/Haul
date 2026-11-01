@@ -585,7 +585,7 @@ private slots:
         const QDir root(fixtures.path());
         root.mkpath("hls");
         QVERIFY(runProcess(ffmpeg, { "-y", "-loglevel", "error", "-f", "lavfi", "-i", "testsrc=duration=6:size=320x240:rate=15",
-                                     "-f", "lavfi", "-i", "sine=frequency=440:duration=6", "-c:v", "mpeg4", "-c:a", "aac", "-shortest",
+                                     "-f", "lavfi", "-i", "sine=frequency=440:duration=6", "-c:v", "libx264", "-preset", "ultrafast", "-pix_fmt", "yuv420p", "-c:a", "aac", "-shortest",
                                      "-f", "hls", "-hls_time", "2", "-hls_playlist_type", "vod", root.filePath("hls/index.m3u8") }));
         QTemporaryDir dir;
         const WorkerOutcome outcome = runStreamWorker(server.url("/static/hls/index.m3u8"), dir.path(), StreamKind::Hls);
@@ -603,7 +603,7 @@ private slots:
         const QDir root(fixtures.path());
         root.mkpath("dash");
         QVERIFY(runProcess(ffmpeg, { "-y", "-loglevel", "error", "-f", "lavfi", "-i", "testsrc=duration=6:size=320x240:rate=15",
-                                     "-f", "lavfi", "-i", "sine=frequency=440:duration=6", "-c:v", "mpeg4", "-c:a", "aac", "-shortest",
+                                     "-f", "lavfi", "-i", "sine=frequency=440:duration=6", "-c:v", "libx264", "-preset", "ultrafast", "-pix_fmt", "yuv420p", "-c:a", "aac", "-shortest",
                                      "-f", "dash", "-seg_duration", "2", root.filePath("dash/manifest.mpd") }));
         const StreamInfo info = inspectStream(QUrl(server.url("/static/dash/manifest.mpd")), NetworkOptions());
         QVERIFY2(info.ok, qPrintable(info.error.message));
